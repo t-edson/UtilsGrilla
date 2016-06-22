@@ -3,13 +3,13 @@ UtilsGrilla
 
 Librería con utilidades para el manejo y configuración de grillas de tipo TStringGrid 
 
-Cambios en la versión 0.4
-=========================
+== Cambios en la versión 0.4 ==
+
 Se cambia el nombre de la unidad UtilGrilla a UtilsGrilla.
 Se crean dos proyectos de ejemplo.
 
-Cambios en la versión 0.3
-=========================
+== Cambios en la versión 0.3 ==
+
 La unidad UtilsGrilla, se renombra a BasicGrilla.
 Se incluyen una nueva unidad UtilGrilla con la definición del objeto TUtilGrilla.
 
