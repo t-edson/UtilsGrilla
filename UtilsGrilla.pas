@@ -8,15 +8,21 @@ uses
   Classes, SysUtils, fgl, Grids, Clipbrd, Menus, Controls, ComCtrls, Graphics,
   LCLProc, BasicGrilla, FrameUtilsGrilla;
 type
+  TugTipoCol = (
+    tugTipText,  //columna de tipo texto
+    tugTipNum    //columna de tipo numérico
+  );
+
   {Representa a una columna de la grilla}
-  TGrillaDBCol = class
-    nomCampo: string;    //Nombre del campo de la grilla
-    ancho   : integer;   //Ancho físico de la columna de la grilla
-    visible : boolean;   //Permite coultar la columna
+  TugGrillaCol = class
+    nomCampo: string;     //Nombre del campo de la grilla
+    ancho   : integer;    //Ancho físico de la columna de la grilla
+    visible : boolean;    //Permite coultar la columna
     alineam : TAlignment; //Alineamiento del campo
-    iEncab  : integer;     //índice a columna de la base de datos o texto
+    iEncab  : integer;    //índice a columna de la base de datos o texto
+    tipo    : TugTipoCol; //Tipo de columna
   end;
-  TGrillaDBCol_list =   specialize TFPGObjectList<TGrillaDBCol>;
+  TGrillaDBCol_list =   specialize TFPGObjectList<TugGrillaCol>;
 
   TEvMouseGrillaDB = procedure(Button: TMouseButton; row, col: integer) of object;
 
@@ -90,8 +96,10 @@ TStringGrid.
     OnMouseUpCell: TEvMouseGrillaDB;
     //Definición de encabezados
     procedure IniEncab;
-    function AgrEncab(titulo: string; ancho: integer; indColDbf: int16 = -1;
+    function AgrEncab(titulo: string; ancho: integer; indColDat: int16 = -1;
       alineam: TAlignment=taLeftJustify): integer;
+    function AgrEncabTxt(titulo: string; ancho: integer; indColDat: int16 = -1): integer;
+    function AgrEncabNum(titulo: string; ancho: integer; indColDat: int16 = -1): integer;
     procedure FinEncab(actualizarGrilla: boolean=true);
     procedure UsarTodosCamposFiltro(icampoDefecto: integer);
     procedure UsarFrameUtils(fraUtils0: TfraUtilsGrilla; Panel0: TStatusPanel); //Configura un TfraUtilsGrilla
@@ -291,24 +299,42 @@ procedure TUtilGrilla.IniEncab;
 begin
   cols.Clear;   //Limpia información de columnas
 end;
-function TUtilGrilla.AgrEncab(titulo: string; ancho: integer; indColDbf: int16 =-1;
+function TUtilGrilla.AgrEncab(titulo: string; ancho: integer; indColDat: int16 =-1;
     alineam: TAlignment = taLeftJustify): integer;
-{Agrega una celda de encabezado a la grilla y devuelve el número de columna usada. Tanbién
-admite el número de columna de la tabla DBF de donde se leerá este campo, si es que se va a
-usar LeerCampo() o LeerFila().}
+{Agrega una celda de encabezado a la grilla y devuelve el número de columna usada. Esta
+función debe ser llamada después de inicializar los enbezados con IniEncab.
+Sus parámetros son:
+* titulo -> Es el título que aparecerá en la fila de encabezados.
+* ancho -> Ancho en pixeles de la columna a definir.
+* indColDat -> Número de columna, de una fuente de datos, de donde se leerá este campo}
 var
-  col: TGrillaDBCol;
+  col: TugGrillaCol;
 begin
   //Agrega información de campo
-  col := TGrillaDBCol.Create;
+  col := TugGrillaCol.Create;
   col.nomCampo:= titulo;
   col.ancho   := ancho;
   col.visible := true;  //visible por defecto
   col.alineam := alineam;
-  col.iEncab  := indColDbf;
+  col.iEncab  := indColDat;
+  col.tipo    := tugTipText;  //texto por defecto
   cols.Add(col);
   Result := cols.Count-1;  //columna usada
 end;
+function TUtilGrilla.AgrEncabTxt(titulo: string; ancho: integer;
+  indColDat: int16): integer;
+{Crea encabezado de tipo texto. Devuelve el número de columna usada. }
+begin
+  Result := AgrEncab(titulo, ancho, indColDat);
+end;
+function TUtilGrilla.AgrEncabNum(titulo: string; ancho: integer;
+  indColDat: int16): integer;
+{Crea encabezado de tipo numérico. Devuelve el número de columna usada. }
+begin
+  Result := AgrEncab(titulo, ancho, indColDat, taRightJustify);
+  cols[Result].tipo := tugTipNum;
+end;
+
 procedure TUtilGrilla.FinEncab(actualizarGrilla: boolean = true);
 begin
   if actualizarGrilla and (grilla<>nil) then begin
