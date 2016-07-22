@@ -1,0 +1,111 @@
+object Form1: TForm1
+  Left = 348
+  Height = 240
+  Top = 197
+  Width = 413
+  Caption = 'Form1'
+  ClientHeight = 240
+  ClientWidth = 413
+  OnCreate = FormCreate
+  LCLVersion = '1.6.0.4'
+  object Panel1: TPanel
+    Left = 0
+    Height = 50
+    Top = 0
+    Width = 413
+    Align = alTop
+    Caption = 'Panel1'
+    ClientHeight = 50
+    ClientWidth = 413
+    TabOrder = 0
+    inline fraUtilsGrilla1: TfraUtilsGrilla
+      Left = 48
+      Height = 24
+      Top = 8
+      ClientHeight = 24
+    end
+  end
+  object StringGrid1: TStringGrid
+    Left = 0
+    Height = 190
+    Top = 50
+    Width = 413
+    Align = alClient
+    TabOrder = 1
+    Cells = (
+      24
+      0
+      1
+      '1'
+      0
+      2
+      '2'
+      0
+      3
+      '3'
+      0
+      4
+      '4'
+      1
+      0
+      'a'
+      1
+      1
+      'cuy'
+      1
+      2
+      'caballo'
+      1
+      3
+      'abecedario'
+      1
+      4
+      'conejo'
+      2
+      0
+      'b'
+      2
+      1
+      'pato'
+      2
+      2
+      'pollo'
+      2
+      3
+      'pavo'
+      2
+      4
+      'paloma'
+      3
+      0
+      'c'
+      3
+      1
+      '1c'
+      3
+      2
+      '2c'
+      3
+      3
+      '3c'
+      3
+      4
+      '4c'
+      4
+      0
+      'd'
+      4
+      1
+      '1d'
+      4
+      2
+      '2d'
+      4
+      3
+      '3d'
+      4
+      4
+      '4d'
+    )
+  end
+end
