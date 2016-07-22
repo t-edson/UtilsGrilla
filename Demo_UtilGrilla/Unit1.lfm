@@ -1,0 +1,64 @@
+object Form1: TForm1
+  Left = 348
+  Height = 506
+  Top = 197
+  Width = 413
+  Caption = 'Form1'
+  ClientHeight = 506
+  ClientWidth = 413
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  LCLVersion = '1.6.0.4'
+  object StringGrid1: TStringGrid
+    Left = 0
+    Height = 88
+    Top = 64
+    Width = 413
+    TabOrder = 0
+  end
+  object StringGrid2: TStringGrid
+    Left = -6
+    Height = 88
+    Top = 232
+    Width = 413
+    TabOrder = 1
+  end
+  object Label2: TLabel
+    Left = 0
+    Height = 32
+    Top = 160
+    Width = 399
+    AutoSize = False
+    Caption = 'Grilla configurada con Utilgrilla, pero con dos juegos de encabezados. Pueden ser más.'
+    ParentColor = False
+    WordWrap = True
+  end
+  object Label1: TLabel
+    Left = 8
+    Height = 48
+    Top = 8
+    Width = 399
+    AutoSize = False
+    Caption = 'Grilla configurada de forma simple con Utilgrilla. '#13#10'Notar que se cambia el control de la selección con teclado (más al estilo de Excel), y que se pueden ocultar columnas.'
+    ParentColor = False
+    WordWrap = True
+  end
+  object Button1: TButton
+    Left = 0
+    Height = 25
+    Top = 200
+    Width = 112
+    Caption = 'Encabezados1'
+    OnClick = Button1Click
+    TabOrder = 2
+  end
+  object Button2: TButton
+    Left = 176
+    Height = 25
+    Top = 200
+    Width = 112
+    Caption = 'Encabezados2'
+    OnClick = Button2Click
+    TabOrder = 3
+  end
+end
