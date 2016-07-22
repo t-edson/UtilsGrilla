@@ -8,8 +8,8 @@ Librería con utilidades para el manejo y configuración de grillas de tipo TStr
 * Se cambia el nombre de la unidad UtilGrilla a UtilsGrilla.
 * Se crean dos proyectos de ejemplo.
 * Se cambia de nombre a la clase TGrillaDBCol.
-* Se agrega el campo "tipo" a la clase TugGrillaCol
-* Sed crean los métodos AgrEncabTxt() y AgrEncabNum()
+* Se agrega el campo "tipo" a la clase TugGrillaCol.
+* Se crean los métodos AgrEncabTxt() y AgrEncabNum().
 
 ==Cambios en la versión 0.3==
 
