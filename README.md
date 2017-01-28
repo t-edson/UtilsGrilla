@@ -38,21 +38,25 @@ o la creación sencilla de encabezados. Para trabajar con una grilla se tiene do
 1. Asociándola a una grilla desde el inicio:
 
 ```
-   UtilGrilla.IniEncab;
-   UtilGrilla.AgrEncab('CAMPO1' , 40);  //Con 40 pixeles de ancho
-   UtilGrilla.AgrEncab('CAMPO2' , 60);  //Con 60 pixeles de ancho
-   UtilGrilla.AgrEncab('CAMPO3' , 35, -1, taRightJustify); //Justificado a la derecha
-   UtilGrilla.FinEncab;
+  UtilGrilla := TUtilGrilla.Create(StringGrid1);
+  UtilGrilla.IniEncab;
+  UtilGrilla.AgrEncab('CAMPO1' , 40);  //Con 40 pixeles de ancho
+  UtilGrilla.AgrEncab('CAMPO2' , 60);  //Con 60 pixeles de ancho
+  UtilGrilla.AgrEncab('CAMPO3' , 35, -1, taRightJustify); //Justificado a la derecha
+  UtilGrilla.FinEncab;
+  ...
 ```
 
 2. Sin asociarla a una UtilGrilla:
 
 ```
-   UtilGrilla.IniEncab;
-   UtilGrilla.AgrEncab('CAMPO1' , 40);  //Con 40 pixeles de ancho
-   UtilGrilla.AgrEncab('CAMPO2' , 60);  //Con 60 pixeles de ancho
-   UtilGrilla.AgrEncab('CAMPO3' , 35, -1, taRightJustify); //Justificado a la derecha
-   UtilGrilla.FinEncab;
+  UtilGrilla := TUtilGrilla.Create;
+  UtilGrilla.IniEncab;
+  UtilGrilla.AgrEncab('CAMPO1' , 40);  //Con 40 pixeles de ancho
+  UtilGrilla.AgrEncab('CAMPO2' , 60);  //Con 60 pixeles de ancho
+  UtilGrilla.AgrEncab('CAMPO3' , 35, -1, taRightJustify); //Justificado a la derecha
+  UtilGrilla.FinEncab;
+  ...
 ```
 
 En esta segunda forma, se debe asociar posteriormente a la UtilGrilla, usando el método:
