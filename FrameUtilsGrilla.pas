@@ -67,6 +67,7 @@ type
     procedure Inic(grilla0: TStringGrid; alt_fila0: integer=22; panel0: TStatusPanel
       =nil);
     procedure GridKeyPress(var Key: char);  //Para dejar al frame procesar el evento KeyPress de la grilla
+    function SinTexto: boolean;
   public  //Constructor y destructor
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -104,6 +105,11 @@ begin
   Edit1.Font.Color := clBlack;
   Edit1.Text:=txt0;
   proteger := false;
+end;
+function TfraUtilsGrilla.SinTexto: boolean;
+{Indica si el control está sin texto de búsqueda.}
+begin
+  Result := Edit1.Font.Color = clGray;
 end;
 procedure TfraUtilsGrilla.AgregarColumnaFiltro(NomCampo: string;
   ColCampo: integer);
