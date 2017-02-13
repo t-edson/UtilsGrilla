@@ -166,9 +166,28 @@ end;
 function FiltrarGrilla(grilla0: TStringGrid; buscar: string;
                        campoBusq0, alturaFil0: integer): integer;
 {Filtra el contenido de la grilla, de acuerdo a una palabra curPass.}
-  function ValidaFiltFil1(grilla: TStringGrid; const f: integer; altura: integer; const buscar1: string): boolean;
+  function ProcesarCad(const cad: string): string;
+  {Procesa una cadena y la deja lista para compraciones}
   begin
-    if Pos(buscar1, Upcase(trim(grilla.Cells[campoBusq0, f]))) <> 0 then begin
+    Result := Upcase(trim(cad));
+    //Esta rutina puede ser lenta
+    Result := StringReplace(Result, 'Á', 'A', [rfReplaceAll]);
+    Result := StringReplace(Result, 'É', 'E', [rfReplaceAll]);
+    Result := StringReplace(Result, 'Í', 'I', [rfReplaceAll]);
+    Result := StringReplace(Result, 'Ó', 'O', [rfReplaceAll]);
+    Result := StringReplace(Result, 'Ú', 'U', [rfReplaceAll]);
+    Result := StringReplace(Result, 'á', 'A', [rfReplaceAll]);
+    Result := StringReplace(Result, 'é', 'E', [rfReplaceAll]);
+    Result := StringReplace(Result, 'í', 'I', [rfReplaceAll]);
+    Result := StringReplace(Result, 'ó', 'O', [rfReplaceAll]);
+    Result := StringReplace(Result, 'ú', 'U', [rfReplaceAll]);
+  end;
+  function ValidaFiltFil1(grilla: TStringGrid; const f: integer; altura: integer; const buscar1: string): boolean;
+  var
+    tmp: String;
+  begin
+    tmp := ProcesarCad(grilla.Cells[campoBusq0, f]);
+    if Pos(buscar1, tmp) <> 0 then begin
       grilla.RowHeights[f] := altura;
       exit(true);
     end else begin  //no coincide
@@ -177,10 +196,13 @@ function FiltrarGrilla(grilla0: TStringGrid; buscar: string;
     end;
   end;
   function ValidaFiltFil2(grilla: TStringGrid; const f: integer; altura: integer; const buscar1, buscar2: string): boolean;
+  var
+    tmp: String;
   begin
-    if Pos(buscar1, Upcase(trim(grilla.Cells[campoBusq0, f]))) <> 0 then begin
+    tmp := ProcesarCad(grilla.Cells[campoBusq0, f]);
+    if Pos(buscar1, tmp) <> 0 then begin
       //coincide la primera palabra, vemos la segunda
-      if Pos(buscar2, Upcase(trim(grilla.Cells[campoBusq0, f]))) <> 0 then begin
+      if Pos(buscar2, tmp) <> 0 then begin
         grilla.RowHeights[f] := altura;
         exit(true);
       end else begin  //no coincide
@@ -203,7 +225,7 @@ begin
   //Realiza el filtrado de ítems
   if grilla0=nil then exit(0);
   Result := 0;
-  buscar := trim(Upcase(buscar));  //simplifica
+  buscar := ProcesarCad(buscar);  //simplifica
   //Valida
   if buscar = '' then begin
     //Cadena vacía coincide con todo

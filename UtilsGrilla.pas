@@ -5,7 +5,7 @@ Se cambia el tipo que devuelve AgrEncab(). Ahora devuelve TugGrillaCol.
 
 DESCRIPCIÓN
 Incluye la definición del objeto TUtilGrilla, con rutinas comunes para el manejo de
-grillas. Se incluye TUtilGrilla en esta unidad separada de BasicGrilla, proque incluye a
+grillas. Se incluye TUtilGrilla en esta unidad separada de BasicGrilla, porque incluye a
 FrameUtilsGrilla, que depende también de BasicGrilla}
 unit UtilsGrilla;
 {$mode objfpc}{$H+}
