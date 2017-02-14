@@ -14,7 +14,20 @@ La librería consiste en dos unidades y un Frame:
 
 No todas las unidades tienen que incluirse, Por lo general solo será necesario usar "UtilsGrilla".
 
-El objeto principal de la unidad es TUtilGrilla. Este objeto permite administrar una grilla de tipo TStringGrid, agregándole funcionalidades comunes, como el desplazamiento de teclado o la creación sencilla de encabezados. Para trabajar con una grilla se tiene dos formas:
+## TUtilsGrilla ##
+
+La clase principal de la librería es TUtilGrilla. Este objeto es un envoltorio que permite administrar fácilmente una grilla de tipo TStringGrid.
+
+Las facilidades que ofrece TUtilGrilla son:
+- Mejora el desplazamiento de teclado, permitiendo usar <Ctrl>+teclas direccionales, para desplazarse hasta los extremos de la grilla.
+- Permite la creación sencilla de encabezados. Usando los métodos AgrEncab(), AgrEncabTxt() y AgrEncabNum().
+- Permite opciones de alineamiento, del texto dentro de la celda.
+- Permite ocultar fácilmente ciertas columnas.
+- Permite activar opciones comunes (como el dimensionado del ancho de las columnas), de forma sencilla, sin necesidad de usar conjuntos.
+- Permite crear estructuras de encabezados diversas para una misma grilla.
+
+Para trabajar con una grilla se tiene dos formas:
+
 
 1. Asociándola a una grilla desde el inicio:
 
@@ -43,11 +56,19 @@ El objeto principal de la unidad es TUtilGrilla. Este objeto permite administrar
 En esta segunda forma, se debe asociar posteriormente a la UtilGrilla, usando el método:
    UtilGrilla.AsignarGrilla(MiGrilla);
 
-, haciendo que la grilla tome los encabezados que se definieron en "UtilGrilla". De esta
-forma se pueden tener diversos objetos TUtilGrilla, para usarse en un solo objeto
+, haciendo que la grilla tome los encabezados que se definieron en "UtilGrilla". De esta forma se pueden tener diversos objetos TUtilGrilla, para usarse en un solo objeto
 TStringGrid.
 
-== FrameUtilsGrilla ==
+## TUtilsGrillaFil ##
+
+Esta clase es similar a TUtilsGrilla, pero se maneja a la grilla, por filas, permitiendo cambiar el color de fondo, del texto o los atributos de las filas, de forma independiente.
+
+Además permite manejar la selección múltiple de filas y el uso de íconos como campos de una fila.
+
+Su uso es similar al de TUtilsGrilla. Para mayor información, se recomienda ver el proyecto ejemplo.
+
+
+## FrameUtilsGrilla ##
 
 Como un complemento para el manejo de grillas, se incluye el frame FrameUtilsGrilla.pas.
 
