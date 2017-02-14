@@ -1,32 +1,32 @@
 object Form1: TForm1
   Left = 348
-  Height = 506
+  Height = 361
   Top = 197
   Width = 413
   Caption = 'Form1'
-  ClientHeight = 506
+  ClientHeight = 361
   ClientWidth = 413
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '1.6.2.0'
   object StringGrid1: TStringGrid
     Left = 0
-    Height = 88
+    Height = 96
     Top = 64
     Width = 413
     TabOrder = 0
   end
   object StringGrid2: TStringGrid
-    Left = -6
+    Left = 0
     Height = 88
-    Top = 232
+    Top = 248
     Width = 413
     TabOrder = 1
   end
   object Label2: TLabel
-    Left = 0
+    Left = 8
     Height = 32
-    Top = 160
+    Top = 176
     Width = 399
     AutoSize = False
     Caption = 'Grilla configurada con Utilgrilla, pero con dos juegos de encabezados. Pueden ser más.'
@@ -44,18 +44,18 @@ object Form1: TForm1
     WordWrap = True
   end
   object Button1: TButton
-    Left = 0
+    Left = 48
     Height = 25
-    Top = 200
+    Top = 216
     Width = 112
     Caption = 'Encabezados1'
     OnClick = Button1Click
     TabOrder = 2
   end
   object Button2: TButton
-    Left = 176
+    Left = 208
     Height = 25
-    Top = 200
+    Top = 216
     Width = 112
     Caption = 'Encabezados2'
     OnClick = Button2Click

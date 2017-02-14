@@ -1,22 +1,36 @@
-{CAMBIOS EN LA VERSIÓN 0.4
-Se crea el campo TugGrillaCol.idx
-Se crean los métodos AgrEncabTxt() y AgrEncabNum()
-Se cambia el tipo que devuelve AgrEncab(). Ahora devuelve TugGrillaCol.
-
+{
 DESCRIPCIÓN
 Incluye la definición del objeto TUtilGrilla, con rutinas comunes para el manejo de
 grillas. Se incluye TUtilGrilla en esta unidad separada de BasicGrilla, porque incluye a
-FrameUtilsGrilla, que depende también de BasicGrilla}
+FrameUtilsGrilla, que depende también de BasicGrilla.
+
+CAMBIOS EN LA VERSIÓN 0.5
+Se pasa a usar el campo Object[] de la columna cero, para TUtilGrillaFil. Ya no se usa la
+columna 3.
+Se crea la opción "OpSelMultiFila", para permitir seleccionar múltiples filas en
+TUtilGrillaFil.
+Se incluye el método EsFilaSeleccionada() en TUtilGrillaFil, para determinar si una fila
+está seleccionada o no.
+Se agrega el método TUtilGrillaFil.AgrEncabIco(), para agregar columnas con íconos.
+Se agrega el campo TUtilGrillaFil.ImageList, para poder asignar una lista de imágenes
+a mostrar en las columnas de tipo ICO.
+
+CAMBIOS EN LA VERSIÓN 0.4
+Se crea el campo TugGrillaCol.idx
+Se crean los métodos AgrEncabTxt() y AgrEncabNum()
+Se cambia el tipo que devuelve AgrEncab(). Ahora devuelve TugGrillaCol.
+}
 unit UtilsGrilla;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, fgl, Grids, Clipbrd, Menus, Controls, ComCtrls, Graphics,
-  LCLProc, BasicGrilla, FrameUtilsGrilla;
+  Classes, windows, SysUtils, fgl, Grids, Clipbrd, Menus, Controls, ComCtrls,
+  Graphics, LCLProc, BasicGrilla, FrameUtilsGrilla;
 type
   TugTipoCol = (
     tugTipText,  //columna de tipo texto
-    tugTipNum    //columna de tipo numérico
+    tugTipNum,   //columna de tipo numérico
+    tugTipIco    //columna de tipo ícono
   );
 
   {Representa a una columna de la grilla}
@@ -145,19 +159,27 @@ TStringGrid.
   Para almacenar los atributos de las filas, no crea nuevas variables, sino que usa la
   propiedad "Object", de las celdas, usando las columnas como campos de propiedades para
   la fila. El uso de las columnas es como se indica:
-    * Colunna 0-> Se reserva para manejar la selección.
-    * Colunna 1-> Almacena el color de fondo de la fila.
-    * Colunna 2-> Almacena el color del texto de la fila.
-    * Colunna 3-> Almacena los atributos del texto de la fila.
+    * Colunna 0-> Almacena el color de fondo de la fila.
+    * Colunna 1-> Almacena el color del texto de la fila.
+    * Colunna 2-> Almacena los atributos del texto de la fila.
   Por lo tanto se deduce que para manejar estas propiedades, la grilla debe tener las
   columnas necesarias.
   }
   TUtilGrillaFil = class(TUtilGrilla)
   private
-    procedure DibCeldaGrilla(aCol, aRow: Integer; const aRect: TRect);
+    FOpSelMultiFila: boolean;
+    procedure DibCeldaTexto(aCol, aRow: Integer; const aRect: TRect);
+    procedure DibCeldaIcono(aCol, aRow: Integer; const aRect: TRect);
     procedure grillaDrawCell(Sender: TObject; aCol, aRow: Integer;
-      aRect: TRect; aState: TGridDrawState);
+      aRect: TRect; aState: TGridDrawState); virtual;
+    procedure SetOpSelMultiFila(AValue: boolean);
+  public //Opciones de la grilla
+    property OpSelMultiFila: boolean  //activa el dimensionamiento de columnas
+             read FOpSelMultiFila write SetOpSelMultiFila;
   public
+    ImageList: TImageList;   //referecnia a un TInageList, para los íconos
+    function AgrEncabIco(titulo: string; ancho: integer; indColDat: int16=-1
+      ): TugGrillaCol;
     procedure AsignarGrilla(grilla0: TStringGrid); override;  //Configura grilla de trabajo
     procedure FijColorFondo(fil: integer; color: TColor);  //Color de fondo de la fila
     procedure FijColorFondoGrilla(color: TColor);
@@ -165,6 +187,7 @@ TStringGrid.
     procedure FijColorTextoGrilla(color: TColor);
     procedure FijAtribTexto(fil: integer; negrita, cursiva, subrayadao: boolean);  //Atributos del texto de la fila
     procedure FijAtribTextoGrilla(negrita, cursiva, subrayadao: boolean);  //Atributos del texto de la fila
+    function EsFilaSeleccionada(const f: integer): boolean;
   public //Constructor y destructor
     constructor Create(grilla0: TStringGrid); override;
   end;
@@ -176,6 +199,13 @@ const
 procedure TUtilGrilla.grillaKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
+  if Key in [VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT] then begin
+    //Corrige un comportamiento anómalo de la selección: Cuando se teienen seleccionados
+    //varios rangos y se mueve la selecció, los otros rangos no desaparecen.
+    if grilla.SelectedRangeCount>1 then begin
+      grilla.ClearSelections;
+    end;
+  end;
   ProcTeclasDireccion(grilla, Key, SHift, ALT_FILA);
   //Dispara evento
   if OnKeyDown<>nil then OnKeyDown(Sender, Key, Shift);
@@ -479,27 +509,86 @@ begin
   inherited Destroy;
 end;
 { TUtilGrillaFil }
-procedure TUtilGrillaFil.DibCeldaGrilla(aCol, aRow: Integer; const aRect: TRect);
+procedure TUtilGrillaFil.DibCeldaIcono(aCol, aRow: Integer; const aRect: TRect);
+{Dibuja un ícono alineado en la celda "aRect" de la grilla "Self.grilla", usando el
+alineamiento de Self.cols[].}
+var
+  cv: TCanvas;
+  txt: String;
+  ancTxt: Integer;
+  icoIdx: Integer;
+begin
+  cv := grilla.Canvas;  //referencia al Lienzo
+  if ImageList = nil then exit;
+  //Es una celda de tipo ícono
+  txt := grilla.Cells[ACol,ARow];
+  if not TryStrToInt(txt, icoIdx) then begin //obtiene índice
+    icoIdx := -1
+  end;
+  case cols[aCol].alineam of
+    taLeftJustify: begin
+      ImageList.Draw(cv, aRect.Left+2, aRect.Top+2, icoIdx);
+    end;
+    taCenter: begin
+      ancTxt := ImageList.Width;
+      ImageList.Draw(cv, aRect.Left + ((aRect.Right - aRect.Left) - ancTxt) div 2,
+                   aRect.Top + 2, icoIdx);
+    end;
+    taRightJustify: begin
+      ancTxt := ImageList.Width;
+      ImageList.Draw(cv, aRect.Right - ancTxt - 2, aRect.Top+2, icoIdx);
+    end;
+  end;
+end;
+procedure TUtilGrillaFil.DibCeldaTexto(aCol, aRow: Integer; const aRect: TRect);
 {Dibuja un texto alineado en la celda "aRect" de la grilla "Self.grilla", usando el
 alineamiento de Self.cols[].}
 var
   cv: TCanvas;
   txt: String;
   ancTxt: Integer;
+  icoIdx: Integer;
 begin
   cv := grilla.Canvas;  //referencia al Lienzo
   txt := grilla.Cells[ACol,ARow];
-  ancTxt := cv.TextWidth(txt);
   //escribe texto con alineación
   case cols[aCol].alineam of
-    taLeftJustify:
+    taLeftJustify: begin
       cv.TextOut(aRect.Left + 2, aRect.Top + 2, txt);
-    taCenter:
+    end;
+    taCenter: begin
+      ancTxt := cv.TextWidth(txt);
       cv.TextOut(aRect.Left + ((aRect.Right - aRect.Left) - ancTxt) div 2,
                  aRect.Top + 2, txt );
-    taRightJustify:
+    end;
+    taRightJustify: begin
+      ancTxt := cv.TextWidth(txt);
       cv.TextOut(aRect.Right - ancTxt - 2, aRect.Top + 2, txt);
+    end;
   end;
+end;
+function TUtilGrillaFil.EsFilaSeleccionada(const f: integer): boolean;
+{Indica si la fila "f", está seleccionada.
+Se puede usar esta función para determinar las filas seleccionadas de la grilla (en el
+caso de que la selección múltiple esté activada), porque hasta la versión actual,
+SelectedRange[], puede contener rangos duplicados, si se hace click dos veces en la misma
+fila, así que podría dar problemas si se usa SelectedRange[], para hallar las filas
+seleccionadas.}
+var
+  i: Integer;
+  sel: TGridRect;
+begin
+  if not FOpSelMultiFila then begin
+    //Caso de selección simple
+    exit(f = grilla.Row);
+  end;
+  //Selección múltiple
+  for i:=0 to grilla.SelectedRangeCount-1 do begin
+    sel := grilla.SelectedRange[i];
+    if (f >= sel.Top) and (f <= sel.Bottom) then exit(true);
+  end;
+  //No está en ningún rango de selección
+  exit(false);
 end;
 procedure TUtilGrillaFil.grillaDrawCell(Sender: TObject; aCol, aRow: Integer;
   aRect: TRect; aState: TGridDrawState);
@@ -515,42 +604,62 @@ begin
     cv.Font.Style := [];
     cv.Brush.Color := clBtnFace;
     cv.FillRect(aRect);   //fondo
-    DibCeldaGrilla(aCol, aRow, aRect);
+    DibCeldaTexto(aCol, aRow, aRect);
   end else begin
     //Es una celda común
-    cv.Font.Color := TColor(PtrUInt(grilla.Objects[2, aRow]));
-    if grilla.Objects[3, aRow]=nil then begin
+    cv.Font.Color := TColor(PtrUInt(grilla.Objects[1, aRow]));
+    if grilla.Objects[2, aRow]=nil then begin
       //Sin atributos
       cv.Font.Style := [];
     end  else begin
       //Hay atributos de texto
-      atrib := PtrUInt(grilla.Objects[3, aRow]);
+      atrib := PtrUInt(grilla.Objects[2, aRow]);
       if (atrib and 1) = 1 then cv.Font.Style := cv.Font.Style + [fsUnderline];
       if (atrib and 2) = 2 then cv.Font.Style := cv.Font.Style + [fsItalic];
       if (atrib and 4) = 4 then cv.Font.Style := cv.Font.Style + [fsBold];
     end;
-    if OpResaltFilaSelec and (aRow = grilla.Row) then begin
+    if OpResaltFilaSelec and EsFilaSeleccionada(aRow) then begin
       //Fila seleccionada. (Debe estar activada la opción "goRowHighligh", para que esto funcione bien.)
       cv.Brush.Color := clBtnFace;
     end else begin
-      cv.Brush.Color := TColor(PtrUInt(grilla.Objects[1, aRow])); //clWhite;
+      cv.Brush.Color := TColor(PtrUInt(grilla.Objects[0, aRow]));
     end;
     cv.FillRect(aRect);   //fondo
-    DibCeldaGrilla(aCol, aRow, aRect);
+    if cols[aCol].tipo = tugTipIco then
+      DibCeldaIcono(aCol, aRow, aRect)
+    else
+      DibCeldaTexto(aCol, aRow, aRect);
     // Dibuja ícono
 {    if (aCol=0) and (aRow>0) then
       ImageList16.Draw(grilla.Canvas, aRect.Left, aRect.Top, 19);}
     //Dibuja borde en celda seleccionada
     if gdFocused in aState then begin
-      cv.Pen.Color:=clRed;
+      cv.Pen.Color := clRed;
       cv.Pen.Style := psDot;
       cv.Frame(aRect.Left, aRect.Top, aRect.Right-1, aRect.Bottom-1);  //dibuja borde
     end;
   end;
 end;
+procedure TUtilGrillaFil.SetOpSelMultiFila(AValue: boolean);
+begin
+  FOpSelMultiFila:=AValue;
+  if grilla<>nil then begin
+    //Ya tiene asignada una grilla
+    if AValue then grilla.RangeSelectMode := rsmMulti
+    else grilla.RangeSelectMode := rsmSingle;
+  end;
+end;
+function TUtilGrillaFil.AgrEncabIco(titulo: string; ancho: integer;
+  indColDat: int16): TugGrillaCol;
+{Agrega una columna de tipo ícono.}
+begin
+  Result := AgrEncab(titulo, ancho, indColDat);
+  Result.tipo := tugTipIco;
+end;
 procedure TUtilGrillaFil.AsignarGrilla(grilla0: TStringGrid);
 begin
   inherited;
+  SetOpSelMultiFila(FOpSelMultiFila);
   //Trabaja con su propia rutina de dibujo
   grilla.DefaultDrawing:=false;
   grilla.OnDrawCell:=@grillaDrawCell;
@@ -560,7 +669,7 @@ procedure TUtilGrillaFil.FijColorFondo(fil: integer; color: TColor);
 begin
   //El color de fondo se almacena en la colunma 1
   if grilla.ColCount<2 then exit;  //protección
-  grilla.Objects[1, fil] := TObject(PtrUInt(color));
+  grilla.Objects[0, fil] := TObject(PtrUInt(color));
 end;
 procedure TUtilGrillaFil.FijColorFondoGrilla(color: TColor);
 {Fija el color de fondo de toda la grilla.}
@@ -569,7 +678,7 @@ var
 begin
   if grilla.ColCount<2 then exit;  //protección
   for f:=grilla.FixedRows to grilla.RowCount-1 do begin
-    grilla.Objects[1, f] := TObject(PtrUInt(color));
+    grilla.Objects[0, f] := TObject(PtrUInt(color));
   end;
 end;
 procedure TUtilGrillaFil.FijColorTexto(fil: integer; color: TColor);
@@ -577,7 +686,7 @@ procedure TUtilGrillaFil.FijColorTexto(fil: integer; color: TColor);
 begin
   //El color de fondo se almacena en la colunma 2
   if grilla.ColCount<3 then exit;  //protección
-  grilla.Objects[2, fil] := TObject(PtrUInt(color));
+  grilla.Objects[1, fil] := TObject(PtrUInt(color));
 end;
 procedure TUtilGrillaFil.FijColorTextoGrilla(color: TColor);
 {Fija el color del texto de toda la grilla.}
@@ -586,7 +695,7 @@ var
 begin
   if grilla.ColCount<3 then exit;  //protección
   for f:=grilla.FixedRows to grilla.RowCount-1 do begin
-    grilla.Objects[2, f] := TObject(PtrUInt(color));
+    grilla.Objects[1, f] := TObject(PtrUInt(color));
   end;
 end;
 procedure TUtilGrillaFil.FijAtribTexto(fil: integer; negrita, cursiva,
@@ -595,7 +704,7 @@ procedure TUtilGrillaFil.FijAtribTexto(fil: integer; negrita, cursiva,
 begin
   //Los atributos se almacenan en la colunma 3
   if grilla.ColCount<4 then exit;  //protección
-  grilla.Objects[3, fil] := TObject(ord(negrita)*4+ord(cursiva)*2+ord(subrayadao));
+  grilla.Objects[2, fil] := TObject(ord(negrita)*4+ord(cursiva)*2+ord(subrayadao));
 end;
 procedure TUtilGrillaFil.FijAtribTextoGrilla(negrita, cursiva,
   subrayadao: boolean);
@@ -604,10 +713,9 @@ var
 begin
   if grilla.ColCount<4 then exit;  //protección
   for f:=grilla.FixedRows to grilla.RowCount-1 do begin
-    grilla.Objects[3, f] := TObject(ord(negrita)*4+ord(cursiva)*2+ord(subrayadao));
+    grilla.Objects[2, f] := TObject(ord(negrita)*4+ord(cursiva)*2+ord(subrayadao));
   end;
 end;
-
 constructor TUtilGrillaFil.Create(grilla0: TStringGrid);
 begin
   inherited Create(grilla0);

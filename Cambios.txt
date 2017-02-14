@@ -1,0 +1,25 @@
+==Cambios en la versión 0.5==
+
+* Se pasa a usar el campo Object[] de la columna cero, para TUtilGrillaFil. Ya no se usa la
+columna 3.
+* Se crea la opción "OpSelMultiFila", para permitir seleccionar múltiples filas en
+TUtilGrillaFil.
+* Se incluye el método EsFilaSeleccionada() en TUtilGrillaFil, para determinar si una fila
+está seleccionada o no.
+* Se agrega el método TUtilGrillaFil.AgrEncabIco(), para agregar columnas con íconos.
+* Se agrega el campo TUtilGrillaFil.ImageList, para poder asignar una lista de imágenes
+a mostrar en las columnas de tipo ICO.
+
+
+==Cambios en la versión 0.4==
+
+* Se cambia el nombre de la unidad UtilGrilla a UtilsGrilla.
+* Se crean dos proyectos de ejemplo.
+* Se cambia de nombre a la clase TGrillaDBCol.
+* Se agrega el campo "tipo" a la clase TugGrillaCol.
+* Se crean los métodos AgrEncabTxt() y AgrEncabNum().
+
+==Cambios en la versión 0.3==
+
+La unidad UtilsGrilla, se renombra a BasicGrilla.
+Se incluyen una nueva unidad UtilGrilla con la definición del objeto TUtilGrilla.

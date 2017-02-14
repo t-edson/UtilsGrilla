@@ -41,16 +41,21 @@ begin
   UtilGrilla.AgrEncabTxt('CAMPO0' , 40);  //Con 40 pixeles de ancho
   UtilGrilla.AgrEncabTxt('CAMPO1' , 60);  //Con 60 pixeles de ancho
   UtilGrilla.AgrEncabNum('CAMPO2' , 60); //Campo numérico, justificado a la derecha
+  UtilGrilla.AgrEncabNum('CAMPO3' , 60); //Campo numérico, justificado a la derecha
   UtilGrilla.FinEncab;
   UtilGrilla.MenuCampos:=true;
+  UtilGrilla.OpResaltFilaSelec:=true;
   //Llena datos, normalmente
-  StringGrid1.RowCount:=3;
+  StringGrid1.RowCount:=4;
   StringGrid1.Cells[0,1] := '1';
   StringGrid1.Cells[1,1] := 'EN';
   StringGrid1.Cells[2,1] := 'LA';
   StringGrid1.Cells[0,2] := '2';
   StringGrid1.Cells[1,2] := 'CASA';
   StringGrid1.Cells[2,2] := 'DE';
+  StringGrid1.Cells[0,3] := '3';
+  StringGrid1.Cells[1,3] := 'PINOCHO';
+  StringGrid1.Cells[2,3] := 'TODOS';
 
   ////////// Crea dos juegos de encabezados ///////////
   UtilGrilla1:= TUtilGrilla.Create(nil);
