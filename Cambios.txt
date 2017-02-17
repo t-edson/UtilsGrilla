@@ -1,5 +1,32 @@
-==Cambios en la versión 0.5==
+0.6
+===
+Se corrige el valor del campo "idx", cuando se usa TUtilGrilla.AgrEncab().
+Se crea el evento TfraUtilsGrilla.OnCambiaFiltro del frame de búsqueda, para facilitar 
+interceptar el evento de cambio de filtro.
+Se quita los campos fraUtils, UsarFrameUtils, y UsarTodosCamposFiltro de TUTilGRilla, 
+Se quita la dependencia de FrameFiltCampo a UtilsGrilla.
+Se hace público el campo TUtilgrilla.cols[]
+Se crea la clase base TUtilgrillaBase y se deriva de ella, TUtilgrilla, para incluir 
+allí, campos para el manejo de filtros.
+Se cambia de nombre a la unidad FrameUtilsGrilla y al frame por FrameFiltCampo.
+Se quita el campo "Panel" de TfraFiltCampo.
+Se quita el campo "filVisibles" de TfraFiltCampo.
+Se elimina TfraFiltCampo.OnFiltrado.
+Se elimina TfraFiltCampo.AplicarFiltro;
+Se quita la interacción del evento Edit1KeyDown, con la grilla.
+Se agrega el procesamiento de las combinaciones de tecla Ctrl+HOME y CTrl+END.
 
+RESUMEN
+En general se cambia la forma de trabajo de UtilGrilla, con respecto a los filtros. 
+El esquema de que existía un frame (TFrameUtilsGrilla) que podía usarse como filtro para
+UtilsGrilla, se ha cambiado por un esquema en donde TUtilsGrilla, no sabe de filtros a 
+medida, Sino que permite agregar diversos filtros (a traves de su método AgregarFiltro)
+y luego puede filtrar sus filas, usando el método Filtrar, usando todos los filtros
+agregados. La idea es que puedan usarse diversos filtros en una misma grilla.
+
+
+0.5
+===
 * Se pasa a usar el campo Object[] de la columna cero, para TUtilGrillaFil. Ya no se usa la
 columna 3.
 * Se crea la opción "OpSelMultiFila", para permitir seleccionar múltiples filas en
@@ -10,16 +37,19 @@ está seleccionada o no.
 * Se agrega el campo TUtilGrillaFil.ImageList, para poder asignar una lista de imágenes
 a mostrar en las columnas de tipo ICO.
 
+Esta versión mejora y revisa el funcionamiento de TUtilGrillaFil, haciéndolo más flexible
+y dándole la capacidad de mostrar íconos. 
 
-==Cambios en la versión 0.4==
 
+0.4
+===
 * Se cambia el nombre de la unidad UtilGrilla a UtilsGrilla.
 * Se crean dos proyectos de ejemplo.
 * Se cambia de nombre a la clase TGrillaDBCol.
 * Se agrega el campo "tipo" a la clase TugGrillaCol.
 * Se crean los métodos AgrEncabTxt() y AgrEncabNum().
 
-==Cambios en la versión 0.3==
-
+0.3
+===
 La unidad UtilsGrilla, se renombra a BasicGrilla.
 Se incluyen una nueva unidad UtilGrilla con la definición del objeto TUtilGrilla.

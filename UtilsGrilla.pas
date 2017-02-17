@@ -25,7 +25,9 @@ unit UtilsGrilla;
 interface
 uses
   Classes, windows, SysUtils, fgl, Grids, Clipbrd, Menus, Controls, ComCtrls,
-  Graphics, LCLProc, BasicGrilla, FrameUtilsGrilla;
+  Graphics, LCLProc, BasicGrilla;
+const
+  ALT_FILA_DEF = 22;          //Altura por defecto para las grillas de datos
 type
   TugTipoCol = (
     tugTipText,  //columna de tipo texto
@@ -76,7 +78,13 @@ En esta segunda forma, se debe asociar posteriormente a la UtilGrilla, usando el
 forma se pueden tener diversos objetos TUtilGrilla, para usarse en un solo objeto
 TStringGrid.
 }
-  TUtilGrilla = class
+  TUtilGrillaBase = class
+  protected  //campos privados
+    FMenuCampos   : boolean;
+    PopupCampos   : TPopupMenu;  //Menú contextual para mostrar/ocultar campos
+    popX, popY    : integer;     //posición donde se abre el menú contextual
+    procedure DimensColumnas;
+    procedure SetMenuCampos(AValue: boolean);
     procedure grillaKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure grillaKeyPress(Sender: TObject; var Key: char);
     procedure grillaMouseUp(Sender: TObject; Button: TMouseButton;
@@ -84,14 +92,6 @@ TStringGrid.
     procedure grillaPrepareCanvas(sender: TObject; aCol, aRow: Integer;
       aState: TGridDrawState);
     procedure itClick(Sender: TObject);
-  protected  //campos privados
-    FMenuCampos   : boolean;
-    PopupCampos   : TPopupMenu;  //Menú contextual para mostrar/ocultar campos
-    popX, popY    : integer;     //posición donde se abre el menú contextual
-    cols          : TGrillaDBCol_list;  //Información sobre las columnas
-    fraUtils      : TfraUtilsGrilla;  //referencia a un TfraUtilsGrilla
-    procedure DimensColumnas;
-    procedure SetMenuCampos(AValue: boolean);
   private  //Getters and Setters
     FOpOrdenarConClick: boolean;
     FOpAutoNumeracion: boolean;
@@ -107,6 +107,7 @@ TStringGrid.
     procedure SetOpResaltFilaSelec(AValue: boolean);
   public
     grilla: TStringGrid;  //referencia a la grila de trabajo
+    cols          : TGrillaDBCol_list;  //Información sobre las columnas
     PopUpCells: TPopupMenu;  //Menú para las celdad
     OnKeyDown: TKeyEvent; {Se debe usar este evento en lugar de usar directamente
                            el evento de la grilla, ya que TGrillaDB, usa ese evento.}
@@ -126,8 +127,6 @@ TStringGrid.
     function AgrEncabNum(titulo: string; ancho: integer; indColDat: int16=-1
       ): TugGrillaCol;
     procedure FinEncab(actualizarGrilla: boolean=true);
-    procedure UsarTodosCamposFiltro(icampoDefecto: integer);
-    procedure UsarFrameUtils(fraUtils0: TfraUtilsGrilla; Panel0: TStatusPanel); //Configura un TfraUtilsGrilla
     procedure AsignarGrilla(grilla0: TStringGrid); virtual;  //Configura grilla de trabajo
   public //Opciones de la grilla
     property MenuCampos: boolean     //Activa el menú contextual
@@ -150,6 +149,28 @@ TStringGrid.
   public //Constructor y destructor
     constructor Create(grilla0: TStringGrid); virtual;
     destructor Destroy; override;
+  end;
+
+const
+  MAX_UTIL_FILTROS = 10;
+
+type
+  TUtilProcFiltro = function(const f: integer):boolean of object;
+  {Se crea una clase derivada, para agregar funcionalidades de filtro}
+  TUtilGrilla = class(TUtilGrillaBase)
+  private
+    procedure FiltrarFila(f: integer);
+  public
+    {Se usa una matriz estática para almacenar a los filtros, para hacer el proceso,
+    de filtrado más rápido, ya que se iterará por cada fila de la grilla .}
+    filtros: array[0..MAX_UTIL_FILTROS-1] of TUtilProcFiltro;
+    numFiltros: integer;
+    filVisibles: integer;
+    procedure LimpiarFiltros;
+    function AgregarFiltro(proc: TUtilProcFiltro): integer;
+    procedure Filtrar;
+  public
+    constructor Create(grilla0: TStringGrid); override;
   end;
 
   { TUtilGrillaFil }
@@ -193,33 +214,26 @@ TStringGrid.
   end;
 
 implementation
-const
-  ALT_FILA = 22;          //Altura por defecto para las grillas de datos
-
-procedure TUtilGrilla.grillaKeyDown(Sender: TObject; var Key: Word;
+procedure TUtilGrillaBase.grillaKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
   if Key in [VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT] then begin
-    //Corrige un comportamiento anómalo de la selección: Cuando se teienen seleccionados
+    //Corrige un comportamiento anómalo de la selección: Cuando se tienen seleccionados
     //varios rangos y se mueve la selecció, los otros rangos no desaparecen.
     if grilla.SelectedRangeCount>1 then begin
       grilla.ClearSelections;
     end;
   end;
-  ProcTeclasDireccion(grilla, Key, SHift, ALT_FILA);
+  ProcTeclasDireccion(grilla, Key, SHift, ALT_FILA_DEF);
   //Dispara evento
   if OnKeyDown<>nil then OnKeyDown(Sender, Key, Shift);
 end;
-procedure TUtilGrilla.grillaKeyPress(Sender: TObject; var Key: char);
+procedure TUtilGrillaBase.grillaKeyPress(Sender: TObject; var Key: char);
 begin
-  if fraUtils<>nil then begin
-    //Pasa evento de interceptación de teclas para búsqueda
-    fraUtils.GridKeyPress(Key);  //para que el frame procese el evento
-  end;
   //Dispara evento
   if OnKeyPress<>nil then OnKeyPress(Sender, Key);
 end;
-procedure TUtilGrilla.grillaMouseUp(Sender: TObject; Button: TMouseButton;
+procedure TUtilGrillaBase.grillaMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
   coordMouse: TPoint;
@@ -267,7 +281,7 @@ begin
     if OnMouseUpCell<>nil then OnMouseUpCell(Button, row, col);
   end;
 end;
-procedure TUtilGrilla.grillaPrepareCanvas(sender: TObject; aCol, aRow: Integer;
+procedure TUtilGrillaBase.grillaPrepareCanvas(sender: TObject; aCol, aRow: Integer;
   aState: TGridDrawState);
 var
   MyTextStyle: TTextStyle;
@@ -280,7 +294,7 @@ begin
     grilla.Canvas.TextStyle := MyTextStyle;
   end;
 end;
-procedure TUtilGrilla.itClick(Sender: TObject);
+procedure TUtilGrillaBase.itClick(Sender: TObject);
 {Se hizo click en un ítem del menú de campos}
 var
   it: TMenuItem;
@@ -295,7 +309,7 @@ begin
   DimensColumnas;  //dimesiona grillas
   PopupCampos.PopUp(popX, popY);  //abre nuevamente, para que no se oculte
 end;
-procedure TUtilGrilla.DimensColumnas;
+procedure TUtilGrillaBase.DimensColumnas;
 var
   c: Integer;
 begin
@@ -308,7 +322,7 @@ begin
       grilla.ColWidths[c] := 0;
   end;
 end;
-procedure TUtilGrilla.SetMenuCampos(AValue: boolean);
+procedure TUtilGrillaBase.SetMenuCampos(AValue: boolean);
 begin
   //if FMenuCampos=AValue then Exit;
   FMenuCampos:=AValue;
@@ -325,7 +339,7 @@ begin
     end;
   end;
 end;
-procedure TUtilGrilla.SetOpDimensColumnas(AValue: boolean);
+procedure TUtilGrillaBase.SetOpDimensColumnas(AValue: boolean);
 begin
   FOpDimensColumnas:=AValue;
   if grilla<>nil then begin
@@ -334,7 +348,7 @@ begin
     else grilla.Options:=grilla.Options - [goColSizing];
   end;
 end;
-procedure TUtilGrilla.SetOpAutoNumeracion(AValue: boolean);
+procedure TUtilGrillaBase.SetOpAutoNumeracion(AValue: boolean);
 begin
   FOpAutoNumeracion:=AValue;
   if grilla<>nil then begin
@@ -343,7 +357,7 @@ begin
     else grilla.Options:=grilla.Options - [goFixedRowNumbering];
   end;
 end;
-procedure TUtilGrilla.SetOpResaltarEncabez(AValue: boolean);
+procedure TUtilGrillaBase.SetOpResaltarEncabez(AValue: boolean);
 begin
   FOpResaltarEncabez:=AValue;
   if grilla<>nil then begin
@@ -352,7 +366,7 @@ begin
     else grilla.Options:=grilla.Options - [goHeaderHotTracking];
   end;
 end;
-procedure TUtilGrilla.SetOpEncabezPulsable(AValue: boolean);
+procedure TUtilGrillaBase.SetOpEncabezPulsable(AValue: boolean);
 begin
   FOpEncabezPulsable:=AValue;
   if grilla<>nil then begin
@@ -361,7 +375,7 @@ begin
     else grilla.Options:=grilla.Options - [goHeaderPushedLook];
   end;
 end;
-procedure TUtilGrilla.SetOpOrdenarConClick(AValue: boolean);
+procedure TUtilGrillaBase.SetOpOrdenarConClick(AValue: boolean);
 begin
   FOpOrdenarConClick:=AValue;
   if grilla<>nil then begin
@@ -369,7 +383,7 @@ begin
     grilla.ColumnClickSorts:=AValue;
   end;
 end;
-procedure TUtilGrilla.SetOpResaltFilaSelec(AValue: boolean);
+procedure TUtilGrillaBase.SetOpResaltFilaSelec(AValue: boolean);
 begin
   FOpResaltFilaSelec:=AValue;
   if grilla<>nil then begin
@@ -378,12 +392,12 @@ begin
     else grilla.Options:=grilla.Options - [goRowHighlight];
   end;
 end;
-procedure TUtilGrilla.IniEncab;
+procedure TUtilGrillaBase.IniEncab;
 {Inicia el proceso de agregar encabezados a la grilla.}
 begin
   cols.Clear;   //Limpia información de columnas
 end;
-function TUtilGrilla.AgrEncab(titulo: string; ancho: integer; indColDat: int16 =-1;
+function TUtilGrillaBase.AgrEncab(titulo: string; ancho: integer; indColDat: int16 =-1;
     alineam: TAlignment = taLeftJustify): TugGrillaCol;
 {Agrega una celda de encabezado a la grilla y devuelve el campo creado. Esta
 función debe ser llamada después de inicializar los enbezados con IniEncab.
@@ -402,24 +416,24 @@ begin
   col.alineam := alineam;
   col.iEncab  := indColDat;
   col.tipo    := tugTipText;  //texto por defecto
-  col.idx     := cols.Count-1;
+  col.idx     := cols.Count;
   cols.Add(col);
   Result := col;  //columna usada
 end;
-function TUtilGrilla.AgrEncabTxt(titulo: string; ancho: integer;
+function TUtilGrillaBase.AgrEncabTxt(titulo: string; ancho: integer;
   indColDat: int16=-1): TugGrillaCol;
 {Crea encabezado de tipo texto. Devuelve el número de columna usada. }
 begin
   Result := AgrEncab(titulo, ancho, indColDat);
 end;
-function TUtilGrilla.AgrEncabNum(titulo: string; ancho: integer;
+function TUtilGrillaBase.AgrEncabNum(titulo: string; ancho: integer;
   indColDat: int16=-1): TugGrillaCol;
 {Crea encabezado de tipo numérico. Devuelve el número de columna usada. }
 begin
   Result := AgrEncab(titulo, ancho, indColDat, taRightJustify);
   Result.tipo := tugTipNum;
 end;
-procedure TUtilGrilla.FinEncab(actualizarGrilla: boolean = true);
+procedure TUtilGrillaBase.FinEncab(actualizarGrilla: boolean = true);
 begin
   if actualizarGrilla and (grilla<>nil) then begin
       //Configura las columnas
@@ -429,28 +443,7 @@ begin
       DimensColumnas;
   end;
 end;
-procedure TUtilGrilla.UsarTodosCamposFiltro(icampoDefecto: integer);
-{Configura todos los campos definidos, menos el 0, como campos para la búsqueda. Solo
-se puede aplicar cuando se ha definido un objeto TfraUtilsGrilla, mediante UsarFrameUtils()
-}
-var
-  c: Integer;
-begin
-  if fraUtils=nil then exit;
-  //Agrega filtro de todos los campos, menos el primero
-  for c:=1 to cols.Count-1 do begin
-    fraUtils.AgregarColumnaFiltro('Por ' + cols[c].nomCampo, c);
-  end;
-  fraUtils.ComboBox2.ItemIndex:=icampoDefecto;
-end;
-procedure TUtilGrilla.UsarFrameUtils(fraUtils0: TfraUtilsGrilla; Panel0: TStatusPanel);
-{Configura un TfraUtilsGrilla, para usarse con la grilla. Así se aprovechan las opciones
-de búsqueda en la grilla.}
-begin
-  fraUtils := fraUtils0;   //guarda referencia
-  fraUtils.Inic(grilla, ALT_FILA, Panel0);
-end;
-procedure TUtilGrilla.AsignarGrilla(grilla0: TStringGrid);
+procedure TUtilGrillaBase.AsignarGrilla(grilla0: TStringGrid);
 {Asigna una grilla al objeto GrillaDB. Al asignarle una nueva grilla, la configura
 de acuerdo a los encabezados definidos para este objeto. Se define esta rutina de forma
 separada al constructor para poder ejecutarla posteroiormente y tener la posibilidad de
@@ -477,13 +470,13 @@ begin
   grilla.OnKeyPress:=@grillaKeyPress;
   grilla.OnMouseUp:=@grillaMouseUp;
 end;
-procedure TUtilGrilla.CopiarCampo;
+procedure TUtilGrillaBase.CopiarCampo;
 begin
   if grilla.Row = -1 then exit;
   if grilla.Col = -1 then exit;
   Clipboard.AsText:=grilla.Cells[grilla.Col, grilla.Row];
 end;
-procedure TUtilGrilla.CopiarFila;
+procedure TUtilGrillaBase.CopiarFila;
 var
   tmp: String;
   c: Integer;
@@ -495,19 +488,77 @@ begin
   Clipboard.AsText:=tmp;
 end;
 //Constructor y destructor
-constructor TUtilGrilla.Create(grilla0: TStringGrid);
+constructor TUtilGrillaBase.Create(grilla0: TStringGrid);
 begin
   cols:= TGrillaDBCol_list.Create(true);
   //Configura grilla
   if grilla0<>nil then AsignarGrilla(grilla0);
 end;
-destructor TUtilGrilla.Destroy;
+destructor TUtilGrillaBase.Destroy;
 begin
   cols.Destroy;
   //Elimina menú. Si se ha creado
   if PopupCampos<>nil then PopupCampos.Destroy;
   inherited Destroy;
 end;
+{ TUtilGrilla }
+procedure TUtilGrilla.LimpiarFiltros;
+{Elimina todos los filtros}
+begin
+   numFiltros := 0;
+end;
+function TUtilGrilla.AgregarFiltro(proc: TUtilProcFiltro): integer;
+{Agrega un filtro al arreglo. Devuelve el índice.}
+begin
+  if numFiltros+1>MAX_UTIL_FILTROS then exit;
+  filtros[numFiltros] := proc;
+  Result := numFiltros;
+  inc(numFiltros);
+end;
+procedure TUtilGrilla.FiltrarFila(f: integer);
+var
+  n: Integer;
+begin
+  //Los filtros se aplican en modo AND, es decir si alguno falla, se oculta
+  for n:=0 to numFiltros-1 do begin
+    if not Filtros[n](f) then begin
+      grilla.RowHeights[f] := 0;
+      exit;
+    end;
+  end;
+  //Paso por todos los filtros
+  inc(filVisibles);
+  grilla.RowHeights[f] := ALT_FILA_DEF;
+end;
+procedure TUtilGrilla.Filtrar;
+{Ejecuta un filtrado, de las filsa de la grilla, uaando los filtros, previamente
+agregados a TUtilGrilla}
+var
+  fil: Integer;
+begin
+  if grilla=nil then exit;  //protección
+  if numFiltros = 0 then begin  //sin filtros
+    grilla.BeginUpdate;
+    for fil:=1 to grilla.RowCount-1 do begin
+      grilla.RowHeights[fil] := ALT_FILA_DEF;
+    end;
+    grilla.EndUpdate();
+    exit;
+  end;
+  grilla.BeginUpdate;
+  filVisibles := 0;
+  for fil:=1 to grilla.RowCount-1 do begin
+    FiltrarFila(fil);
+  end;
+  grilla.EndUpdate();
+  grilla.row := PrimeraFilaVis(grilla);   //selecciona el primero
+end;
+constructor TUtilGrilla.Create(grilla0: TStringGrid);
+begin
+  inherited Create(grilla0);
+  LimpiarFiltros;
+end;
+
 { TUtilGrillaFil }
 procedure TUtilGrillaFil.DibCeldaIcono(aCol, aRow: Integer; const aRect: TRect);
 {Dibuja un ícono alineado en la celda "aRect" de la grilla "Self.grilla", usando el

@@ -37,6 +37,7 @@ end;
 
 function CumpleFiltro(const cad: string; const buscar: string): boolean;
 //Funciones para el tratamiento de grillas
+function PrimeraFilaVis(grilla0: TStringGrid): integer;
 function FiltrarGrilla(grilla0: TStringGrid; buscar: string;
                        campoBusq0, alturaFil0: integer): integer;
 procedure ProcTeclasDireccion(grilla0: TStringGrid; var Key: Word;
@@ -129,6 +130,16 @@ var
   c: Integer;
 begin
   for c:=grilla0.FixedCols to grilla0.ColCount -1 do begin
+    if grilla0.ColWidths[c] <> 0 then exit(c);
+  end;
+  exit(-1);
+end;
+function UltimaColVis(grilla0: TStringGrid): integer;
+{Devuelve la primera columna visible de la grilla.}
+var
+  c: Integer;
+begin
+  for c:=grilla0.ColCount-1 downto 1 do begin
     if grilla0.ColWidths[c] <> 0 then exit(c);
   end;
   exit(-1);
@@ -314,12 +325,24 @@ begin
       grilla0.col := grilla0.ColCount-1;
       Key := 0;
     end;
-  end else if (Shift = []) and (Key = VK_HOME) then begin
-    grilla0.col := 1;
-    Key := 0;
-  end else if (Shift = []) and (Key = VK_END) then begin
-    grilla0.col := grilla0.ColCount-1;
-    Key := 0;
+  end else if Key = VK_HOME then begin
+    if Shift = [] then begin
+      grilla0.col := PrimeraColVis(grilla0);;
+      Key := 0;
+    end else if Shift = [ssCtrl] then begin
+      grilla0.row := PrimeraFilaVis(grilla0);
+      grilla0.col := PrimeraColVis(grilla0);
+      QuitarSeleccion;   //por alguna razón, la selección múltiple puede quedar activa
+    end;
+  end else if Key = VK_END then begin
+    if Shift = [] then begin
+      grilla0.col := UltimaColVis(grilla0);
+      Key := 0;
+    end else begin
+      grilla0.row := UltimaFilaVis(grilla0);
+      grilla0.col := UltimaColVis(grilla0);
+      Key := 0;
+    end;
   end else if (Shift = []) and (Key = VK_PRIOR) then begin
     nfilvis := (grilla0.Height-50) div alt_fila;
     for n:=1 to nfilvis do RetrocederAFilaVis(grilla0);
