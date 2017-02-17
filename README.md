@@ -14,7 +14,7 @@ La librería consiste en dos unidades y un Frame:
 
 No todas las unidades tienen que incluirse, Por lo general solo será necesario usar "UtilsGrilla".
 
-## TUtilsGrilla ##
+## TUtilGrilla ##
 
 La clase principal de la librería es TUtilGrilla. Este objeto es un envoltorio que permite administrar fácilmente una grilla de tipo TStringGrid.
 
@@ -87,17 +87,19 @@ Los filtros se ingresan como referencias a funciones que deben devolver TRUE, si
 Todos los filtros agregados, se evalúan en cortocicuito, usando el operador AND.
 
 
-## TUtilsGrillaFil ##
+## TUtilGrillaFil ##
 
-Esta clase es similar a TUtilsGrilla, pero se maneja a la grilla, por filas, permitiendo cambiar el color de fondo, del texto o los atributos de las filas, de forma independiente.
+![SynFacilCompletion](http://blog.pucp.edu.pe/blog/tito/wp-content/uploads/sites/610/2017/02/Sin-título-1.png "Título de la imagen")
 
-Incluye las mismas facilidades de TUtilsGrilla, pero adicionalmente:
+Esta clase es similar a TUtilGrilla, pero se maneja a la grilla, por filas, permitiendo cambiar el color de fondo, del texto o los atributos de las filas, de forma independiente.
+
+Incluye las mismas facilidades de TUtilGrilla, pero adicionalmente:
 - Configura la selección por filas, aunque mantiene identificada a la celda seleccionada.
 - Permite cambiara atributos de las filas (color de fondo, color de texto y atributos de texto)
 - Permite activar y desactivar  la selección múltiple de filas.
 - Permite crear columnas que muestren íconos en lugar de texto.
 
-Su uso es similar al de TUtilsGrilla:
+Su uso es similar al de TUtilGrilla:
 
 ```
   UtilGrilla:= TUtilGrillaFil.Create(StringGrid1);
@@ -115,25 +117,45 @@ Su uso es similar al de TUtilsGrilla:
 
 ## FrameFiltCampo ##
 
+![SynFacilCompletion](http://blog.pucp.edu.pe/blog/tito/wp-content/uploads/sites/610/2017/02/Sin-título.png "Título de la imagen")
+
 Como un complemento para el manejo de grillas, se incluye el frame FrameFiltCampo.pas, que se comporta como un componente para realizar búsquedas filtrando las filas que no coincidan con el criterio de búsqueda. El algortimo de búsqueda está optimizado para manejar varios miles de filas sin retraso notorio.
 
 Para que un FrameFiltCampo, trabaje como filtro, se puede configurar de dos formas. La forma simple consiste en asociarla directamente a un objeto TUtilGrillaFil:
 
+```
   fraFiltCampo.Inic(UtilGrilla, 4);  
+```
   
 Esta definición asocia el frame a la grilla, configura todos los campos de la grilla, como parte del filtro, y elige el campo 4 (segundo parámetro), como campo por defecto para el filtro.  
 
 La forma detallada, la que permite más libertad, sería:
 
+```
   fraFiltCampo.Inic(StringGrid1);   //asocia a grilla
   fraFiltCampo.LeerCamposDeGrilla(UtilGrilla.cols, 1);  //configura menú de campos
   UtilGrilla.AgregarFiltro(@fraFiltCampo.Filtro);  //agrega el filtro
+```
 
 Adicionalmente, para determinar cuando cambia el filtro (sea porque se ha modificado el texto de búsqueda o se cambia el campo de trabajo), se debe interceptar el método "OnCambiaFiltro". 
 
+```
   fraFiltCampo.OnCambiaFiltro:=@fraFiltCampo_CambiaFiltro;
+```
 
 Luego, lo más común sería que este método, llame al método Filtrar() de UtilGrilla.
  
 Hay que notar que es posible agregar varios FrameFiltCampo, a un TUtilGrilla, y que funcionen a modo de filtro en cascada.
+
+Si bien fraFiltCampo, se ha creado para trabajar con un objeto TUtilGrilla, también es posible usarlo, con un TStringGrid común:
+
+```
+  fraFiltCampo1.Inic(StringGrid1);
+  fraFiltCampo1.AgregarColumnaFiltro('Por columna A', 1);
+  fraFiltCampo1.AgregarColumnaFiltro('Por columna B', 2);
+  fraFiltCampo1.OnCambiaFiltro:=@fraFiltCampo1CambiaFiltro;
+```
+
+En este caso habría que implementar en fraFiltCampo1CambiaFiltro(), el código que realice el filtrado sobre la grilla.
+
 

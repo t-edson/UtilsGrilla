@@ -204,7 +204,7 @@ procedure TfraFiltCampo.Inic(gri: TUtilGrilla; campoDef: integer = -1);
 defecto que se usará cuando se muestre el filtro.}
 begin
   Inic(gri.grilla);
-  if campoDef>0 then begin
+  if campoDef>=0 then begin
     LeerCamposDeGrilla(gri.cols, campoDef);
   end;
   gri.AgregarFiltro(@Filtro);  //agrega su filtro

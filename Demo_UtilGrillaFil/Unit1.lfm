@@ -23,7 +23,7 @@ object Form1: TForm1
     Top = 8
     Width = 399
     AutoSize = False
-    Caption = 'Grilla configurada con UtilgrillaFil. '#13#10'Notar que lso atributos se cambian por filas.'
+    Caption = 'Grilla configurada con UtilgrillaFil. '#13#10'Notar que los atributos se cambian por filas.'
     ParentColor = False
     WordWrap = True
   end
