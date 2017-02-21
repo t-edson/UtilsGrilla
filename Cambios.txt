@@ -15,6 +15,10 @@ Se elimina TfraFiltCampo.OnFiltrado.
 Se elimina TfraFiltCampo.AplicarFiltro;
 Se quita la interacción del evento Edit1KeyDown, con la grilla.
 Se agrega el procesamiento de las combinaciones de tecla Ctrl+HOME y CTrl+END.
+Se agrega el campo "editable" al registro "TugGrillaCol".
+Se agrega el campo "valDefec" al registro "TugGrillaCol".
+Se agrega el evento "OnMouseDown" a TUtilGrillaBase.
+Se agrega la rutina de búsqueda TUtilGrilla.BuscarTxt.
 
 RESUMEN
 En general se cambia la forma de trabajo de UtilGrilla, con respecto a los filtros. 

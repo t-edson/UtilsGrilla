@@ -58,7 +58,9 @@ type
     campoAfiltrar: integer;
     numPalabras: byte;  //número de palabaras de búsqueda
     buscar1, buscar2: string;  //palabras de búsqueda
+    griFiltrar: TUtilGrilla;
     procedure ActualizarVisibilidadBotones;
+    procedure fraFiltCampoCambiaFiltro;
     procedure ModoConTexto(txt0: string);
     procedure ModoSinTexto;
     procedure PreparaFiltro;
@@ -72,9 +74,10 @@ type
     procedure GridKeyPress(var Key: char);  //Para dejar al frame procesar el evento KeyPress de la grilla
     function SinTexto: boolean;
     procedure LeerCamposDeGrilla(cols: TGrillaDBCol_list; indCampoDef: integer);
+    procedure Activar(txtIni: string);
   public  //Inicialización
-    procedure Inic(grilla0: TStringGrid);
-    procedure Inic(gri: TUtilGrilla; campoDef: integer=-1);
+    procedure Inic(grilla0: TStringGrid); virtual;
+    procedure Inic(gri: TUtilGrilla; campoDef: integer=-1); virtual;
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
   end;
@@ -190,26 +193,6 @@ begin
   end;
   end;
 end;
-procedure TfraFiltCampo.Inic(grilla0: TStringGrid);
-{Prepara al frame para iniciar su trabajo. Notar que para evitar conflictos, se ha
-definido que no se intercepten los eventos de la grilla, en este Frame.}
-begin
-  grilla := grilla0;
-  alt_fila := ALT_FILA_DEF;
-  ComboBox2.Clear;
-  filtros.Clear;
-end;
-procedure TfraFiltCampo.Inic(gri: TUtilGrilla; campoDef: integer = -1);
-{Asocia al frame para trabajar con un objeto TUtilGrilla. "campoDef" es el campo por
-defecto que se usará cuando se muestre el filtro.}
-begin
-  Inic(gri.grilla);
-  if campoDef>=0 then begin
-    LeerCamposDeGrilla(gri.cols, campoDef);
-  end;
-  gri.AgregarFiltro(@Filtro);  //agrega su filtro
-end;
-
 procedure TfraFiltCampo.GridKeyPress(var Key: char);
 {Debe ser llamado en el evento OnKeyPress, de la grilla, si se desee que el Frame tome el
  control de este evento, iniciando el filtrado con la tecla pulsada.}
@@ -305,6 +288,40 @@ begin
     AgregarColumnaFiltro('Por ' + cols[c].nomCampo, c);
   end;
   ComboBox2.ItemIndex:=indCampoDef;
+end;
+procedure TfraFiltCampo.fraFiltCampoCambiaFiltro;
+begin
+  if griFiltrar<>nil then griFiltrar.Filtrar;
+end;
+procedure TfraFiltCampo.Activar(txtIni: string);
+{Activa el panel de búsqueda, dándole el enfoque, y poniendo un texto debúsqueda inicial. }
+begin
+    Edit1.Text:=txtIni;
+  if Edit1.Visible then Edit1.SetFocus;
+  Edit1.SelStart:=2;
+end;
+procedure TfraFiltCampo.Inic(grilla0: TStringGrid);
+{Prepara al frame para iniciar su trabajo. Notar que para evitar conflictos, se ha
+definido que no se intercepten los eventos de la grilla, en este Frame.}
+begin
+  grilla := grilla0;
+  alt_fila := ALT_FILA_DEF;
+  ComboBox2.Clear;
+  filtros.Clear;
+end;
+procedure TfraFiltCampo.Inic(gri: TUtilGrilla; campoDef: integer = -1);
+{Asocia al frame para trabajar con un objeto TUtilGrilla. "campoDef" es el campo por
+defecto que se usará cuando se muestre el filtro.}
+begin
+  Inic(gri.grilla);
+  if campoDef>=0 then begin
+    LeerCamposDeGrilla(gri.cols, campoDef);
+  end;
+  gri.AgregarFiltro(@Filtro);  //agrega su filtro
+  {Crea un manejador de evento temporal, para ejecutar el filtro. Este evento puede
+  luego reasignarse, de acuerdo a necesida, ya que no es vital. }
+  griFiltrar := gri;
+  OnCambiaFiltro:=@fraFiltCampoCambiaFiltro;
 end;
 constructor TfraFiltCampo.Create(TheOwner: TComponent);
 begin

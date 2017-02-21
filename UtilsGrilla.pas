@@ -44,6 +44,8 @@ type
     iEncab  : integer;    //índice a columna de la base de datos o texto
     tipo    : TugTipoCol; //Tipo de columna
     idx     : integer;    //Índice dentro de su contenedor
+    editable: boolean;    //Indica si se puede editar
+    valDefec: string;     //Valor por defecto
   end;
   TGrillaDBCol_list =   specialize TFPGObjectList<TugGrillaCol>;
 
@@ -78,6 +80,9 @@ En esta segunda forma, se debe asociar posteriormente a la UtilGrilla, usando el
 forma se pueden tener diversos objetos TUtilGrilla, para usarse en un solo objeto
 TStringGrid.
 }
+
+  { TUtilGrillaBase }
+
   TUtilGrillaBase = class
   protected  //campos privados
     FMenuCampos   : boolean;
@@ -85,10 +90,12 @@ TStringGrid.
     popX, popY    : integer;     //posición donde se abre el menú contextual
     procedure DimensColumnas;
     procedure SetMenuCampos(AValue: boolean);
-    procedure grillaKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure grillaKeyPress(Sender: TObject; var Key: char);
+    procedure grillaKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState); virtual;
+    procedure grillaKeyPress(Sender: TObject; var Key: char); virtual;
+    procedure grillaMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer); virtual;
     procedure grillaMouseUp(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
+      Shift: TShiftState; X, Y: Integer); virtual;
     procedure grillaPrepareCanvas(sender: TObject; aCol, aRow: Integer;
       aState: TGridDrawState);
     procedure itClick(Sender: TObject);
@@ -106,22 +113,23 @@ TStringGrid.
     procedure SetOpResaltarEncabez(AValue: boolean);
     procedure SetOpResaltFilaSelec(AValue: boolean);
   public
-    grilla: TStringGrid;  //referencia a la grila de trabajo
-    cols          : TGrillaDBCol_list;  //Información sobre las columnas
-    PopUpCells: TPopupMenu;  //Menú para las celdad
-    OnKeyDown: TKeyEvent; {Se debe usar este evento en lugar de usar directamente
-                           el evento de la grilla, ya que TGrillaDB, usa ese evento.}
-    OnKeyPress: TKeyPressEvent; {Se debe usar este evento en lugar de usar directamente
-                           el evento de la grilla, ya que TGrillaDB, usa ese evento.}
+    grilla     : TStringGrid;  //referencia a la grila de trabajo
+    cols       : TGrillaDBCol_list;  //Información sobre las columnas
+    PopUpCells : TPopupMenu;  //Menú para las celdad
+    OnKeyDown  : TKeyEvent; {Se debe usar este evento en lugar de usar directamente
+                            el evento de la grilla, ya que TGrillaDB, usa ese evento.}
+    OnKeyPress : TKeyPressEvent; {Se debe usar este evento en lugar de usar directamente
+                            el evento de la grilla, ya que TGrillaDB, usa ese evento.}
 //    OnDblClick: TKeyPressEvent; {Se debe usar este evento en lugar de usar directamente
-//                         el evento de la grilla, ya que TGrillaDB, usa ese evento.}
-    OnMouseUp: TMouseEvent;
+//                          el evento de la grilla, ya que TGrillaDB, usa ese evento.}
+    OnMouseDown: TMouseEvent;
+    OnMouseUp  : TMouseEvent;
     OnMouseUpHeader: TEvMouseGrillaDB;
     OnMouseUpCell: TEvMouseGrillaDB;
     //Definición de encabezados
     procedure IniEncab;
     function AgrEncab(titulo: string; ancho: integer; indColDat: int16=-1;
-      alineam: TAlignment=taLeftJustify): TugGrillaCol;
+      alineam: TAlignment=taLeftJustify): TugGrillaCol; virtual;
     function AgrEncabTxt(titulo: string; ancho: integer; indColDat: int16=-1
       ): TugGrillaCol;
     function AgrEncabNum(titulo: string; ancho: integer; indColDat: int16=-1
@@ -156,7 +164,7 @@ const
 
 type
   TUtilProcFiltro = function(const f: integer):boolean of object;
-  {Se crea una clase derivada, para agregar funcionalidades de filtro}
+  {Se crea una clase derivada, para agregar funcionalidades de filtro, y de búsqueda.}
   TUtilGrilla = class(TUtilGrillaBase)
   private
     procedure FiltrarFila(f: integer);
@@ -169,6 +177,7 @@ type
     procedure LimpiarFiltros;
     function AgregarFiltro(proc: TUtilProcFiltro): integer;
     procedure Filtrar;
+    function BuscarTxt(txt: string; col: integer): integer;
   public
     constructor Create(grilla0: TStringGrid); override;
   end;
@@ -209,7 +218,7 @@ type
     procedure FijAtribTexto(fil: integer; negrita, cursiva, subrayadao: boolean);  //Atributos del texto de la fila
     procedure FijAtribTextoGrilla(negrita, cursiva, subrayadao: boolean);  //Atributos del texto de la fila
     function EsFilaSeleccionada(const f: integer): boolean;
-  public //Constructor y destructor
+  public //Inicialización
     constructor Create(grilla0: TStringGrid); override;
   end;
 
@@ -232,6 +241,11 @@ procedure TUtilGrillaBase.grillaKeyPress(Sender: TObject; var Key: char);
 begin
   //Dispara evento
   if OnKeyPress<>nil then OnKeyPress(Sender, Key);
+end;
+procedure TUtilGrillaBase.grillaMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if OnMouseDown<>nil then OnMouseDown(Sender, Button, Shift, X, Y);
 end;
 procedure TUtilGrillaBase.grillaMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
@@ -417,6 +431,7 @@ begin
   col.iEncab  := indColDat;
   col.tipo    := tugTipText;  //texto por defecto
   col.idx     := cols.Count;
+  col.editable:= true;   //editable por defecto
   cols.Add(col);
   Result := col;  //columna usada
 end;
@@ -469,6 +484,7 @@ begin
   grilla.OnKeyDown:=@grillaKeyDown;
   grilla.OnKeyPress:=@grillaKeyPress;
   grilla.OnMouseUp:=@grillaMouseUp;
+  grilla.OnMouseDown:=@grillaMouseDown;
 end;
 procedure TUtilGrillaBase.CopiarCampo;
 begin
@@ -552,6 +568,18 @@ begin
   end;
   grilla.EndUpdate();
   grilla.row := PrimeraFilaVis(grilla);   //selecciona el primero
+end;
+function TUtilGrilla.BuscarTxt(txt: string; col: integer): integer;
+{Realiza la búsqueda de un texto, de forma literal, en la columna indicada. devuelve el
+número de fila donde se encuentra. SI no encuentra, devuelve -1.
+No busca en los encabezados.}
+var
+  f: Integer;
+begin
+  for f:=grilla.FixedRows to grilla.RowCount-1 do begin
+    if grilla.Cells[col, f] = txt then exit(f);
+  end;
+  exit(-1);
 end;
 constructor TUtilGrilla.Create(grilla0: TStringGrid);
 begin

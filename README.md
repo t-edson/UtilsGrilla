@@ -127,7 +127,7 @@ Para que un FrameFiltCampo, trabaje como filtro, se puede configurar de dos form
   fraFiltCampo.Inic(UtilGrilla, 4);  
 ```
   
-Esta definición asocia el frame a la grilla, configura todos los campos de la grilla, como parte del filtro, y elige el campo 4 (segundo parámetro), como campo por defecto para el filtro.  
+Esta definición asocia el frame a la grilla, configura todos los campos de la grilla, como parte del filtro, y elige el campo 4 (segundo parámetro), como campo por defecto para el filtro. Además configura el evento OnCambiaFiltro, para que se filtre la grilla en cada pulsación de tecla.
 
 La forma detallada, la que permite más libertad, sería:
 
