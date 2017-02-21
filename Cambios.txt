@@ -1,3 +1,7 @@
+0.7
+===
+Se crea el campo "TugGrillaCol.procValid" para asociar rutinas de validación.
+
 0.6
 ===
 Se corrige el valor del campo "idx", cuando se usa TUtilGrilla.AgrEncab().

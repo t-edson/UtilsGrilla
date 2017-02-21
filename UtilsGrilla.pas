@@ -29,6 +29,11 @@ uses
 const
   ALT_FILA_DEF = 22;          //Altura por defecto para las grillas de datos
 type
+  {Procedimiento asociado a una columna, para permitir realizar una validación del valor
+  que se desea grabar en la columna. Se espera que el valor devuelto, sea el mnesaje de
+  error, en caso de que el valor deseado no sea apropiado parala columna.}
+  TProcValidacion = function(nuevValor: string): string of object;
+
   TugTipoCol = (
     tugTipText,  //columna de tipo texto
     tugTipNum,   //columna de tipo numérico
@@ -46,6 +51,7 @@ type
     idx     : integer;    //Índice dentro de su contenedor
     editable: boolean;    //Indica si se puede editar
     valDefec: string;     //Valor por defecto
+    procValid: TProcValidacion;  //procedimiento para validar valores en esta columna
   end;
   TGrillaDBCol_list =   specialize TFPGObjectList<TugGrillaCol>;
 
