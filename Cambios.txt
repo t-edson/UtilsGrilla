@@ -1,6 +1,12 @@
 0.7
 ===
 Se crea el campo "TugGrillaCol.procValid" para asociar rutinas de validación.
+Se crea TUtilGrillaBase.PegarACampo() 
+Se hace público DimensColumnas();
+Se crea el enumerado TModFiltrado, para permitir más modos de filtro.
+Se activan las opciones del filtro para comparaciones con números (=, >, <)
+Se agrega el campo "formato" a TugGrillaCol. Pero no se usa, sino que se deja por si 
+se desea implementar el formato.
 
 0.6
 ===

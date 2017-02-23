@@ -38,6 +38,7 @@ end;
 function CumpleFiltro(const cad: string; const buscar: string): boolean;
 //Funciones para el tratamiento de grillas
 function PrimeraFilaVis(grilla0: TStringGrid): integer;
+procedure AdelantarAFilaVis(grilla0: TStringGrid);
 function FiltrarGrilla(grilla0: TStringGrid; buscar: string;
                        campoBusq0, alturaFil0: integer): integer;
 procedure ProcTeclasDireccion(grilla0: TStringGrid; var Key: Word;

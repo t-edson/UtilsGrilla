@@ -24,7 +24,7 @@ unit UtilsGrilla;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, windows, SysUtils, fgl, Grids, Clipbrd, Menus, Controls, ComCtrls,
+  Classes, windows, SysUtils, fgl, Grids, Clipbrd, Menus, Controls,
   Graphics, LCLProc, BasicGrilla;
 const
   ALT_FILA_DEF = 22;          //Altura por defecto para las grillas de datos
@@ -32,7 +32,7 @@ type
   {Procedimiento asociado a una columna, para permitir realizar una validación del valor
   que se desea grabar en la columna. Se espera que el valor devuelto, sea el mnesaje de
   error, en caso de que el valor deseado no sea apropiado parala columna.}
-  TProcValidacion = function(nuevValor: string): string of object;
+  TProcValidacion = function(fil: integer; nuevValor: string): string of object;
 
   TugTipoCol = (
     tugTipText,  //columna de tipo texto
@@ -52,6 +52,7 @@ type
     editable: boolean;    //Indica si se puede editar
     valDefec: string;     //Valor por defecto
     procValid: TProcValidacion;  //procedimiento para validar valores en esta columna
+    formato  : string;   //Formato para mostrar una celda, cuando es numérica
   end;
   TGrillaDBCol_list =   specialize TFPGObjectList<TugGrillaCol>;
 
@@ -94,7 +95,6 @@ TStringGrid.
     FMenuCampos   : boolean;
     PopupCampos   : TPopupMenu;  //Menú contextual para mostrar/ocultar campos
     popX, popY    : integer;     //posición donde se abre el menú contextual
-    procedure DimensColumnas;
     procedure SetMenuCampos(AValue: boolean);
     procedure grillaKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState); virtual;
     procedure grillaKeyPress(Sender: TObject; var Key: char); virtual;
@@ -158,8 +158,11 @@ TStringGrid.
     property OpResaltFilaSelec: boolean  //Resaltar fila seleccionada
              read FOpResaltFilaSelec write SetOpResaltFilaSelec;
   public //funciones auxiliares
+    procedure DimensColumnas;
+    function BuscarColumna(nombColum: string): TugGrillaCol;
     procedure CopiarCampo;  //copia valor de la celda al portapapeles
     procedure CopiarFila;   //copia valor de la fila al portapapeles
+    function PegarACampo: boolean;  //pega del protapapeles al campo
   public //Constructor y destructor
     constructor Create(grilla0: TStringGrid); virtual;
     destructor Destroy; override;
@@ -260,16 +263,12 @@ var
   it: TMenuItem;
   i: Integer;
   col, row: integer;
-  gz: TGridZone;
 begin
   //Pasa el evento
   if OnMouseUp<>nil then OnMouseUp(Sender, Button, Shift, X, Y);
   //Verifica posición en donde se soltó el mouse
-  coordMouse := grilla.ScreenToClient(Mouse.CursorPos);
-  col := grilla.MouseToCell(coordMouse).x;
-  row := grilla.MouseToCell(coordMouse).y;
-  gz := grilla.MouseToGridZone(coordMouse.x, coordMouse.y);
-  if gz = gzFixedCols then begin
+  grilla.MouseToCell(X, Y, Col, Row );
+  if (Row < grilla.FixedRows) and (Col>=grilla.FixedCols) then begin
     //Es el encabezado
     if OnMouseUpHeader<>nil then OnMouseUpHeader(Button, row, col);
     if FMenuCampos and (Button = mbRight) then begin
@@ -288,10 +287,10 @@ begin
       popY := Mouse.CursorPos.y;
       PopupCampos.PopUp(popX, popY);
     end;
-  end else if gz = gzFixedRows then begin
+  end else if Col<grilla.FixedCols then begin
     //En columnas fijas
   end else begin
-    //Es una celda común o enposición inválida
+    //Es una celda común o en posición inválida
     if Button = mbRight then begin
       //Implementa la selección con botón derecho
       grilla.Row:=row;
@@ -492,10 +491,19 @@ begin
   grilla.OnMouseUp:=@grillaMouseUp;
   grilla.OnMouseDown:=@grillaMouseDown;
 end;
+function TUtilGrillaBase.BuscarColumna(nombColum: string): TugGrillaCol;
+{Busca una columna por su nombre. Si no la encuentra, devuelve NIL.}
+var
+  col: TugGrillaCol;
+begin
+  for col in cols do begin
+    if col.nomCampo = nombColum then exit(col);
+  end;
+  exit(nil);
+end;
 procedure TUtilGrillaBase.CopiarCampo;
 begin
-  if grilla.Row = -1 then exit;
-  if grilla.Col = -1 then exit;
+  if (grilla.Row = -1) or  (grilla.Col = -1) then exit;
   Clipboard.AsText:=grilla.Cells[grilla.Col, grilla.Row];
 end;
 procedure TUtilGrillaBase.CopiarFila;
@@ -503,11 +511,21 @@ var
   tmp: String;
   c: Integer;
 begin
-  if grilla.Row = -1 then exit;
-  if grilla.Col = -1 then exit;
+  if (grilla.Row = -1) or  (grilla.Col = -1) then exit;
   tmp := grilla.Cells[1, grilla.Row];
   for c:=2 to grilla.ColCount-1 do tmp := tmp + #9 + grilla.Cells[c, grilla.Row];
   Clipboard.AsText:=tmp;
+end;
+function TUtilGrillaBase.PegarACampo: boolean;
+{Pega el valor del portapapeles en la celda. Si hubo cambio, devuelve TRUE.}
+begin
+  if (grilla.Row = -1) or  (grilla.Col = -1) then exit;
+  if grilla.Cells[grilla.Col, grilla.Row] <> Clipboard.AsText then begin
+    grilla.Cells[grilla.Col, grilla.Row] := Clipboard.AsText;
+    Result := true;
+  end else begin
+    Result := false;
+  end;
 end;
 //Constructor y destructor
 constructor TUtilGrillaBase.Create(grilla0: TStringGrid);

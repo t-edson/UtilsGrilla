@@ -25,14 +25,25 @@ unit FrameFiltCampo;
 interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, StdCtrls, ExtCtrls, LCLProc,
-  Graphics, Buttons, LCLType, Grids, fgl, ComCtrls, BasicGrilla, UtilsGrilla;
+  Graphics, Buttons, LCLType, Grids, fgl, UtilsGrilla;
 type
   TFiltroGrilla = class
     etiq: string;   //etiqueta  a mostrar
     campo: integer; //campo a usar como filtro
   end;
   TFiltroGrilla_list = specialize TFPGObjectList<TFiltroGrilla>;
-
+  //Modo de filtrado
+  TModFiltrado = (
+    mfilNone,    //Sin filtro (pasa todo)
+    mfil1Pal,    //COincidencia con 1 palabra
+    mfil2Pal,    //Coincidencia con 2 palabras
+    mfilIgualN,  //Comparación con valor
+    mfilMayorN,  //Comparación con valor
+    mfilMenorN,  //Comparación con valor
+    mfilMayorIN,  //Comparación con valor
+    mfilMenorIN,  //Comparación con valor
+    mfilDiferN   //Comparación con valor
+  );
   { TfraFiltCampo }
   TfraFiltCampo = class(TFrame)
     ComboBox2: TComboBox;
@@ -56,8 +67,9 @@ type
     proteger: boolean;
     filtros : TFiltroGrilla_list;
     campoAfiltrar: integer;
-    numPalabras: byte;  //número de palabaras de búsqueda
+    modFiltro: TModFiltrado;  //Modo del filtro
     buscar1, buscar2: string;  //palabras de búsqueda
+    buscarN: double;  //búsqueda por cantidad
     griFiltrar: TUtilGrilla;
     procedure ActualizarVisibilidadBotones;
     procedure fraFiltCampoCambiaFiltro;
@@ -179,17 +191,42 @@ Esta rutina es llamada por cada fila de la grilla.}
   end;
 var
   tmp: String;
+  n: Double;
 begin
-  case numPalabras of
-  0: exit(true);   //siempre pasa
-  1: begin
+  case modFiltro of
+  mfilNone: exit(true);   //siempre pasa
+  mfil1Pal: begin  //búsqueda de una palabra
     tmp := PreparaCad(grilla.Cells[campoAfiltrar, f]);
     exit(ValidaFiltFil1(tmp, buscar1));
   end;
-  2: begin
+  mfil2Pal: begin  //búsqueda de dos palabras
     tmp := PreparaCad(grilla.Cells[campoAfiltrar, f]);
     exit(ValidaFiltFil2(tmp, buscar1, buscar2));
     //se podría acelerar, si se evita pasar los parámetros "buscar1" y "buscar2".
+  end;
+  mfilIgualN: begin  //igual a número
+    if not TryStrToFloat(grilla.Cells[campoAfiltrar, f], n) then exit(false);
+    Result := (n = buscarN);
+  end;
+  mfilDiferN: begin
+    if not TryStrToFloat(grilla.Cells[campoAfiltrar, f], n) then exit(false);
+    Result := (n <> buscarN);
+  end;
+  mfilMenorN: begin  //igual a número
+    if not TryStrToFloat(grilla.Cells[campoAfiltrar, f], n) then exit(false);
+    Result := (n < buscarN);
+  end;
+  mfilMayorN: begin  //igual a número
+    if not TryStrToFloat(grilla.Cells[campoAfiltrar, f], n) then exit(false);
+    Result := (n > buscarN);
+  end;
+  mfilMenorIN: begin  //igual a número
+    if not TryStrToFloat(grilla.Cells[campoAfiltrar, f], n) then exit(false);
+    Result := (n <= buscarN);
+  end;
+  mfilMayorIN: begin  //igual a número
+    if not TryStrToFloat(grilla.Cells[campoAfiltrar, f], n) then exit(false);
+    Result := (n >= buscarN);
   end;
   end;
 end;
@@ -208,22 +245,62 @@ const
   MAX_PAL_BUS = 40;  //tamaño máximo de las palabras de búsqueda, cuando hay más de una
 var
   p: Integer;
-  buscar: String;
+  buscar, numStr: String;
 begin
   ActualizarVisibilidadBotones;
   if (ComboBox2.ItemIndex = -1) or (grilla = nil) or (txtBusq='') then begin
-    numPalabras := 0;  //otra manera de decir que no hay filtro
+    modFiltro := mfilNone;  //otra manera de decir que no hay filtro
+  end else if txtBusq[1] in ['=','>','<'] then begin
+    //Búsqueda por número
+    if length(txtBusq)<2 then begin  //muy pocos caracteres
+      modFiltro := mfilNone;
+      exit;
+    end;
+    campoAfiltrar := filtros[ComboBox2.ItemIndex].campo;
+    //Identifica operador y número
+    case txtBusq[1] of
+    '=': begin
+      modFiltro := mfilIgualN;  //otra manera de decir que no hay filtro
+      numStr := copy(txtBusq, 2, length(txtBusq));
+    end;
+    '<': begin
+      if txtBusq[2] = '>' then begin
+        numStr := copy(txtBusq, 3, length(txtBusq));
+        modFiltro := mfilDiferN;
+      end else if txtBusq[2] = '=' then begin
+        numStr := copy(txtBusq, 3, length(txtBusq));
+        modFiltro := mfilMenorIN;
+      end else begin
+        numStr := copy(txtBusq, 2, length(txtBusq));
+        modFiltro := mfilMenorN;
+      end;
+    end;
+    '>': begin
+      if txtBusq[2] = '=' then begin
+        numStr := copy(txtBusq, 3, length(txtBusq));
+        modFiltro := mfilMayorIN;
+      end else begin
+        numStr := copy(txtBusq, 2, length(txtBusq));
+        modFiltro := mfilMayorN;
+      end;
+    end;
+    end;
+    //Lee número a comparar
+    if not TryStrToFloat(numStr, buscarN) then begin
+      modFiltro := mfilNone;
+      exit;
+    end;
   end else begin
     buscar := PreparaCad(txtBusq);  //simplifica
     campoAfiltrar := filtros[ComboBox2.ItemIndex].campo;
     p := pos(' ', buscar);
     if p = 0 then begin
       //solo hay una palabra de búsqueda
-      numPalabras := 1;  //otra manera de decir que no hay filtro
+      modFiltro := mfil1Pal;  //otra manera de decir que no hay filtro
       buscar1 := buscar;
     end else begin
       //Hay dos o mas palabras de búsqueda
-      numPalabras := 2;  //otra manera de decir que no hay filtro
+      modFiltro := mfil2Pal;  //otra manera de decir que no hay filtro
       buscar1 := copy(buscar,1,p-1);
       while buscar[p]= ' ' do
         inc(p);  //Salta espacios. No debería terminar en espacio, porque ya se le aplicó trim()
