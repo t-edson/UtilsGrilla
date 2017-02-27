@@ -1,12 +1,26 @@
+0.8
+===
+Se crea el frame FrameEditGrilla, que incluye una grilla para editar sus campos.
+Se modifican y crean nuevas funciones en BAsicGrilla, para completar las rutinas de desplazamiento 
+por la grilla, cuando hay filas o columnas ocultas.
+
 0.7
 ===
 Se crea el campo "TugGrillaCol.procValid" para asociar rutinas de validación.
 Se crea TUtilGrillaBase.PegarACampo() 
 Se hace público DimensColumnas();
 Se crea el enumerado TModFiltrado, para permitir más modos de filtro.
-Se activan las opciones del filtro para comparaciones con números (=, >, <)
+Se activan las opciones del filtro para comparaciones con números (=, <>, >, >=, <, <=)
 Se agrega el campo "formato" a TugGrillaCol. Pero no se usa, sino que se deja por si 
 se desea implementar el formato.
+Se agrega el campo "grilla" a TugGrillaCol, para referenciar a la grilla de trabajo.
+Se cambian los nombres del tipo TugTipoCol y se agregan los tipos ugTipBol y ugTipDatTim, para 
+manejar datos Boolean y TDAteTime.
+Se agregan campos de tipo "procAction<Tipo>", a TugGrillaCol, para incluir código asociado a un 
+campo de la tabla.
+Se agregan las propiedades ValStr[], ValNum[] y ValDatTim[], a TugGrillaCol, para poder leer valores 
+de columna, en su tipo nativo, directamente de los TugGrillaCol.
+Se crea un nuevo frame para realizar filtrado por dos campos, en un TreeView.
 
 0.6
 ===

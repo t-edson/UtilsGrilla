@@ -38,7 +38,12 @@ end;
 function CumpleFiltro(const cad: string; const buscar: string): boolean;
 //Funciones para el tratamiento de grillas
 function PrimeraFilaVis(grilla0: TStringGrid): integer;
+function FilaVisAnterior(grilla0: TStringGrid): integer;
+function FilaVisSiguiente(grilla0: TStringGrid): integer;
+procedure RetrocederAFilaVis(grilla0: TStringGrid);
 procedure AdelantarAFilaVis(grilla0: TStringGrid);
+procedure MovASiguienteColVis(grilla0: TStringGrid);
+
 function FiltrarGrilla(grilla0: TStringGrid; buscar: string;
                        campoBusq0, alturaFil0: integer): integer;
 procedure ProcTeclasDireccion(grilla0: TStringGrid; var Key: Word;
@@ -125,6 +130,52 @@ begin
   end;
   exit(-1);
 end;
+function FilaVisAnterior(grilla0: TStringGrid): integer;
+{Fila visible anterior. Si no hay devuelve -1}
+var
+  f: Integer;
+begin
+  f := grilla0.Row;
+  if f<=1 then exit(-1);
+  repeat
+    dec(f);
+  until (f<1) or (grilla0.RowHeights[f] <> 0);
+  if f<1 then  //no encontró fila anterior
+    exit(-1)
+  else  //encontró una fila anterior no oculta
+    exit(f);
+end;
+function FilaVisSiguiente(grilla0: TStringGrid): integer;
+{Fila visible anterior. Si no hay devuelve -1}
+var
+  f: Integer;
+begin
+  f := grilla0.Row;
+  if f>=grilla0.RowCount-1 then exit(-1);
+  repeat
+    inc(f);
+  until (f>grilla0.RowCount-1) or (grilla0.RowHeights[f] <> 0);
+  if f>grilla0.RowCount-1 then  //no encontró fila anterior
+    exit(-1)
+  else  //encontró una fila posterior no oculta
+    exit(f);
+end;
+procedure RetrocederAFilaVis(grilla0: TStringGrid);
+{Retrocede la fila seleccionada de la grilla, una posición de celda visible.}
+var
+  f: Integer;
+begin
+  f := FilaVisAnterior(grilla0);
+  if f<>-1 then grilla0.Row := f;
+end;
+procedure AdelantarAFilaVis(grilla0: TStringGrid);
+{Adelanta la fila seleccionada de la grilla, una posición de celda visible.}
+var
+  f: Integer;
+begin
+  f := FilaVisSiguiente(grilla0);
+  if f<>-1 then grilla0.Row := f;
+end;
 function PrimeraColVis(grilla0: TStringGrid): integer;
 {Devuelve la primera columna visible de la grilla.}
 var
@@ -145,36 +196,22 @@ begin
   end;
   exit(-1);
 end;
-procedure RetrocederAFilaVis(grilla0: TStringGrid);
-{Retrocede la fila seleccionada de la grilla, una posición de celda visible.}
+procedure MovASiguienteColVis(grilla0: TStringGrid);
+{Adelanta la columna seleccionada de la grilla, una posición de celda visible.}
 var
-  f: Integer;
+  c: Integer;
 begin
-  f := grilla0.Row;
-  if f<=1 then exit;
+  c := grilla0.Col;
+  if c>=grilla0.ColCount-1 then exit;
   repeat
-    dec(f);
-  until (f<1) or (grilla0.RowHeights[f] <> 0);
-  if f<1 then  //no encontró fila anterior
+    inc(c);
+  until (c>grilla0.ColCount-1) or (grilla0.ColWidths[c] <> 0);
+  if c>grilla0.ColCount-1 then  //no encontró columna siguiente
     //deja la misma fila seleccionada
-  else  //encontró una fila anterior no oculta
-    grilla0.Row := f;
+  else  //encontró una columna posterior no oculta
+    grilla0.Col := c;
 end;
-procedure AdelantarAFilaVis(grilla0: TStringGrid);
-{Adelanta la fila seleccionada de la grilla, una posición de celda visible.}
-var
-  f: Integer;
-begin
-  f := grilla0.Row;
-  if f>=grilla0.RowCount-1 then exit;
-  repeat
-    inc(f);
-  until (f>grilla0.RowCount-1) or (grilla0.RowHeights[f] <> 0);
-  if f>grilla0.RowCount-1 then  //no encontró fila anterior
-    //deja la misma fila seleccionada
-  else  //encontró una fila posterior no oculta
-    grilla0.Row := f;
-end;
+
 function FiltrarGrilla(grilla0: TStringGrid; buscar: string;
                        campoBusq0, alturaFil0: integer): integer;
 {Filtra el contenido de la grilla, de acuerdo a una palabra curPass.}
@@ -319,7 +356,7 @@ begin
     if Shift = [] then begin
       //Caso normal, deja que lo procese la grilla
     end else if Shift = [ssCtrl] then begin
-      grilla0.col := grilla0.ColCount-1;
+      grilla0.col := UltimaColVis(grilla0);
       QuitarSeleccion;   //por alguna razón, la selección múltiple puede quedar activa
       Key := 0;
     end else if Shift = [ssShift, ssCtrl] then begin

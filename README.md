@@ -1,4 +1,4 @@
-UtilsGrilla 0.6
+UtilsGrilla 0.8
 ===============
 
 Librería con utilidades para el manejo y configuración de grillas de tipo TStringGrid 
@@ -21,14 +21,15 @@ La clase principal de la librería es TUtilGrilla. Este objeto es un envoltorio 
 Las facilidades que ofrece TUtilGrilla son:
 
 - Mejora el desplazamiento de teclado, permitiendo usar <Ctrl>+teclas direccionales, para desplazarse hasta los extremos de la grilla.
-- Permite la creación sencilla de encabezados. Usando los métodos AgrEncab(), AgrEncabTxt() y AgrEncabNum().
+- Permite la creación sencilla de encabezados, Usando  métodos como AgrEncabTxt() y AgrEncabNum().
 - Permite opciones de alineamiento, del texto dentro de la celda.
 - Permite ocultar fácilmente ciertas columnas.
 - Permite activar opciones comunes (como el dimensionado del ancho de las columnas), de forma sencilla, sin necesidad de usar conjuntos.
 - Permite crear estructuras de encabezados diversas para una misma grilla.
-- Permite asociar una columna de uan grilla a un índice, para facilitar la carga de 
-campos de tipo texto o de base de datos.
+- Permite asociar una columna de una grilla a un índice, para facilitar la carga de 
+campos desde un archivo de texto o desde base de datos.
 - Brinda un soporte para posteriormente incluir, filtros por filas, en la grilla.
+- Incluye funciones de conversión de tipos, de modo que, por ejemplo, permiten leer o escribir valores de tipo "booleano", directamente desde o hacia la grilla.
 
 Para trabajar con una grilla se tiene dos formas:
 

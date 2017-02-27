@@ -11,7 +11,7 @@ siendo usados por alguna otra utilidad.
 La forma de utilizar el frame, es insertándolo en el formulario o panel, a modo de
 ToolBar. Luego configurarlo:
 
-fraUtilsGrilla1.Inic(grilla, ALT_FILA, StatusBar1.Panels[0]);
+fraUtilsGrilla1.Inic(grilla);
 fraUtilsGrilla1.AgregarColumnaFiltro('Por Código', 1);
 fraUtilsGrilla1.AgregarColumnaFiltro('Por Nombre', 2);
 
@@ -63,7 +63,6 @@ type
     procedure FrameResize(Sender: TObject);
   private
     grilla :TStringGrid;  //grilla asociada
-    alt_fila: integer;    //alto de las filas
     proteger: boolean;
     filtros : TFiltroGrilla_list;
     campoAfiltrar: integer;
@@ -87,6 +86,7 @@ type
     function SinTexto: boolean;
     procedure LeerCamposDeGrilla(cols: TGrillaDBCol_list; indCampoDef: integer);
     procedure Activar(txtIni: string);
+    procedure SetFocus; override;
   public  //Inicialización
     procedure Inic(grilla0: TStringGrid); virtual;
     procedure Inic(gri: TUtilGrilla; campoDef: integer=-1); virtual;
@@ -377,12 +377,20 @@ begin
   if Edit1.Visible then Edit1.SetFocus;
   Edit1.SelStart:=2;
 end;
+procedure TfraFiltCampo.SetFocus;
+begin
+//  inherited SetFocus;
+  try
+    edit1.SetFocus;
+  except
+  end;
+end;
+
 procedure TfraFiltCampo.Inic(grilla0: TStringGrid);
 {Prepara al frame para iniciar su trabajo. Notar que para evitar conflictos, se ha
 definido que no se intercepten los eventos de la grilla, en este Frame.}
 begin
   grilla := grilla0;
-  alt_fila := ALT_FILA_DEF;
   ComboBox2.Clear;
   filtros.Clear;
 end;

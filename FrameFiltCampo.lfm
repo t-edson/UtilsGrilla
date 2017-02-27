@@ -7,7 +7,6 @@ object fraFiltCampo: TfraFiltCampo
   ClientWidth = 356
   Color = clWindow
   Constraints.MinHeight = 24
-  LCLVersion = '1.6.2.0'
   ParentColor = False
   TabOrder = 0
   DesignLeft = 399
