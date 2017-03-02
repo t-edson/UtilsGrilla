@@ -1,14 +1,15 @@
 0.8
 ===
-Se crea el frame FrameEditGrilla, que incluye una grilla para editar sus campos.
-Se modifican y crean nuevas funciones en BAsicGrilla, para completar las rutinas de desplazamiento 
+Se modifican y crean nuevas funciones en BasicGrilla, para completar las rutinas de desplazamiento 
 por la grilla, cuando hay filas o columnas ocultas.
 Se cambia de nombre al PopUp: PopupCampos, por PopupHeadInt.
 Se corrige y mejora TUtilGrillaBase.grillaMouseUp() para detectar la pulsación del Mouse en una 
 zona fuera de las celdas.
 Se crean los eventos OnMouseUpNoCell() y OnMouseUpFixedCol().
-Se cambai el nombre el tipo de evento TEvMouseGrillaDB a TEvMouseGrilla;
+Se cambia el nombre el tipo de evento TEvMouseGrillaDB a TEvMouseGrilla;
 Se cambia el valor mínimo para UltimaFilaVis(), en la unidad BasicGrilla.
+Se agrega un parámetro adicional, a los eventos de tipo "TugProcColAction<Tipo>", para que puedan
+recibir la cadena de validación directamente y no tengan que usar una variable auxiliar.
 
 0.7
 ===

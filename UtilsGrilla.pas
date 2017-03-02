@@ -8,7 +8,7 @@ unit UtilsGrilla;
 interface
 uses
   Classes, windows, SysUtils, fgl, Types, Grids, Clipbrd, Menus, Controls,
-  Graphics, LCLProc, BasicGrilla, MisUtils;
+  Graphics, LCLProc, CibUtils, BasicGrilla, MisUtils;
 const
   ALT_FILA_DEF = 22;          //Altura por defecto para las grillas de datos
 type
@@ -24,10 +24,10 @@ type
 
   //Acción a realizar sobre una columna
   TugColAction = (
-    ucaRead,    //Se desea leer el valor de la columna
-    ucaWrite,   //Se desea escribir un valor en la columna
-    ucaValid,   //Se debe validar si un valor, del tipo de la cadena, es legal
-    ucaValidStr //Se debe validar si un valor de cadena es legal
+    ucaRead,    //Leer el valor de la columna
+    ucaWrite,   //Escribir un valor en la columna
+    ucaValid,   //Validar si un valor, del tipo nativo (número, boolean, ...), es legal.
+    ucaValidStr //Validar si una cadena (que se desea asignar a la celda) es legal.
   );
   TugColRestric = (
     ucrNotNull,   //Columna no nula
@@ -38,17 +38,18 @@ type
   que se desea grabar en la columna. Se espera que el valor devuelto, sea el mnesaje de
   error, en caso de que el valor deseado no sea apropiado parala columna.}
   TProcValidacion = function(fil: integer; nuevValor: string): string of object;
-  {Procedimiento  asociado a una columna, para permitir realizar acciones diversas}
-  TugProcColActionStr = function(actType: TugColAction; col, row: integer;
-                                 AValue: string): string of object;
-  TugProcColActionChr = function(actType: TugColAction; col, row: integer;
-                                 AValue: char): char of object;
-  TugProcColActionNum = function(actType: TugColAction; col, row: integer;
-                                 AValue: double): double of object;
-  TugProcColActionBool = function(actType: TugColAction; col, row: integer;
-                                 AValue: boolean): boolean of object;
-  TugProcColActionDatTim = function(actType: TugColAction; col, row: integer;
-                                 AValue: TDateTime): TDateTime of object;
+  {Procedimientos asociados a una columna, para permitir realizar acciones diversas,
+  como la asignación o la validación.}
+  TugProcColActionStr = function(actType: TugColAction; var AValue: string;
+                        col, row: integer): string of object;
+  TugProcColActionChr = function(actType: TugColAction; var ValidStr: string;
+                        col, row: integer; AValue: char): char of object;
+  TugProcColActionNum = function(actType: TugColAction; var ValidStr: string;
+                        col, row: integer; AValue: double): double of object;
+  TugProcColActionBool = function(actType: TugColAction; var ValidStr: string;
+                        col, row: integer; AValue: boolean): boolean of object;
+  TugProcColActionDatTim = function(actType: TugColAction; var ValidStr: string;
+                        col, row: integer; AValue: TDateTime): TDateTime of object;
   { TugGrillaCol }
   {Representa a una columna de la grilla}
   TugGrillaCol = class
@@ -66,6 +67,7 @@ type
     formato : string;   //Formato para mostrar una celda, cuando es numérica
     restric : set of TugColRestric;
   private
+    nullStr: string;   //Cadena nula. Se usa como variable auxiliar.
     function GetValStr(Index: integer): string;
     procedure SetValStr(Index: integer; AValue: string);
     function GetValChr(Index: integer): char;
@@ -86,8 +88,6 @@ type
     procActionNum   : TugProcColActionNum;
     procActionBool  : TugProcColActionBool;
     procActionDatTim: TugProcColActionDatTim;
-    //Valor de cadena, cuando se desea validar si una cadena es legal para el campo.
-    ValidStr: string;
     //Valor como cadena
     property ValStr[Index: integer]: string read GetValStr write SetValStr;
     //Valor como cadena
@@ -156,16 +156,16 @@ type
     FOpEncabezPulsable: boolean;
     FOpResaltarEncabez: boolean;
     FOpResaltFilaSelec: boolean;
-    function procDefActionBool(actType: TugColAction; col, row: integer;
-      AValue: boolean): boolean;
-    function procDefActionChr(actType: TugColAction; col, row: integer;
-      AValue: char): char;
-    function procDefActionDatTim(actType: TugColAction; col, row: integer;
-      AValue: TDateTime): TDateTime;
-    function procDefActionNum(actType: TugColAction; col, row: integer;
-      AValue: double): double;
-    function procDefActionStr(actType: TugColAction; col, row: integer;
-      AValue: string): string;
+    function procDefActionBool(actType: TugColAction; var ValidStr: string;
+             col, row: integer; AValue: boolean): boolean;
+    function procDefActionChr(actType: TugColAction; var ValidStr: string;
+             col, row: integer; AValue: char): char;
+    function procDefActionDatTim(actType: TugColAction; var ValidStr: string;
+             col, row: integer; AValue: TDateTime): TDateTime;
+    function procDefActionNum(actType: TugColAction; var ValidStr: string;
+             col, row: integer; AValue: double): double;
+    function procDefActionStr(actType: TugColAction; var AValue: string;
+             col, row: integer): string;
     procedure SetOpDimensColumnas(AValue: boolean);
     procedure SetOpAutoNumeracion(AValue: boolean);
     procedure SetOpEncabezPulsable(AValue: boolean);
@@ -302,43 +302,43 @@ implementation
 { TugGrillaCol }
 function TugGrillaCol.GetValStr(Index: integer): string;
 begin
-  Result := procActionStr(ucaRead, idx, Index, '');
+  Result := procActionStr(ucaRead, nullStr, idx, Index);
 end;
 procedure TugGrillaCol.SetValStr(Index: integer; AValue: string);
 begin
-  procActionStr(ucaWrite, idx, Index, AValue);
+  procActionStr(ucaWrite, AValue, idx, Index);
 end;
 function TugGrillaCol.GetValChr(Index: integer): char;
 begin
-  Result := procActionChr(ucaRead, idx, Index, ' ');
+  Result := procActionChr(ucaRead, nullStr, idx, Index, ' ');
 end;
 procedure TugGrillaCol.SetValChr(Index: integer; AValue: char);
 begin
-  procActionChr(ucaWrite, idx, Index, AValue);
+  procActionChr(ucaWrite, nullStr, idx, Index, AValue);
 end;
 function TugGrillaCol.GetValNum(Index: integer): Double;
 begin
-  Result := procActionNum(ucaRead, idx, Index, 0);
+  Result := procActionNum(ucaRead, nullStr, idx, Index, 0);
 end;
 procedure TugGrillaCol.SetValNum(Index: integer; AValue: Double);
 begin
-  procActionNum(ucaWrite, idx, Index, AValue);
+  procActionNum(ucaWrite, nullStr, idx, Index, AValue);
 end;
 function TugGrillaCol.GetValBool(Index: integer): boolean;
 begin
-  Result := procActionBool(ucaRead, idx, Index, false);
+  Result := procActionBool(ucaRead, nullStr, idx, Index, false);
 end;
 procedure TugGrillaCol.SetValBool(Index: integer; AValue: boolean);
 begin
-  procActionBool(ucaWrite, idx, Index, AValue);
+  procActionBool(ucaWrite, nullStr, idx, Index, AValue);
 end;
 function TugGrillaCol.GetValDatTim(Index: integer): TDateTime;
 begin
-  Result := procActionDatTim(ucaRead, idx, Index, 0);
+  Result := procActionDatTim(ucaRead, nullStr, idx, Index, 0);
 end;
 procedure TugGrillaCol.SetValDatTim(Index: integer; AValue: TDateTime);
 begin
-  procActionDatTim(ucaWrite, idx, Index, AValue);
+  procActionDatTim(ucaWrite, nullStr, idx, Index, AValue);
 end;
 procedure TugGrillaCol.ValidateStr(row: integer; NewStr: string);
 {Verifica si el valor indicado, como cadena, es legal para ponerlo en la celda que
@@ -347,23 +347,19 @@ básico de las celdas del TStringGrid, es cadema.}
 begin
   case tipo of
   ugTipText: begin
-    if procActionStr<>nil then procActionStr(ucaValidStr, idx, row, NewStr);
+    if procActionStr<>nil then procActionStr(ucaValidStr, NewStr, idx, row);
   end;
   ugTipChar: begin
-    ValidStr := NewStr;   //Usa este campo como cadena de validación
-    if procActionChr<>nil then procActionChr(ucaValidStr, idx, row, ' ');
+    if procActionChr<>nil then procActionChr(ucaValidStr, NewStr, idx, row, ' ');
   end;
   ugTipNum: begin
-    ValidStr := NewStr;   //Usa este campo como cadena de validación
-    if procActionNum<>nil then procActionNum(ucaValidStr, idx, row, 0);
+    if procActionNum<>nil then procActionNum(ucaValidStr, NewStr, idx, row, 0);
   end;
   ugTipBol: begin
-    ValidStr := NewStr;   //Usa este campo como cadena de validación
-    if procActionBool<>nil then procActionBool(ucaValidStr, idx, row, false);
+    if procActionBool<>nil then procActionBool(ucaValidStr, NewStr, idx, row, false);
   end;
   ugTipDatTim: begin
-    ValidStr := NewStr;   //Usa este campo como cadena de validación
-    if procActionDatTim<>nil then procActionDatTim(ucaValidStr, idx, row, 0);
+    if procActionDatTim<>nil then procActionDatTim(ucaValidStr, NewStr, idx, row, 0);
   end;
   end;
 end;
@@ -570,8 +566,8 @@ begin
     else grilla.Options:=grilla.Options - [goRowHighlight];
   end;
 end;
-function TUtilGrillaBase.procDefActionStr(actType: TugColAction; col,
-  row: integer; AValue: string): string;
+function TUtilGrillaBase.procDefActionStr(actType: TugColAction;
+  var AValue: string; col, row: integer): string;
 var
   f: Integer;
   colum: TugGrillaCol;
@@ -583,7 +579,7 @@ begin
   ucaWrite: begin  //Se pide escribir un valor en la grilla
     grilla.Cells[col, row] := AValue;  //es cadena
   end;
-  ucaValid, ucaValidStr: begin  //Se pide validación
+  ucaValid, ucaValidStr: begin  //Ambas Validaciones son equivalentes.
     colum := cols[col];
     if (ucrNotNull in colum.restric) and (AValue = '') then begin
       MsjError:='Campo "' + colum.nomCampo + '" no puede ser nulo.';
@@ -601,8 +597,8 @@ begin
   end;
   end;
 end;
-function TUtilGrillaBase.procDefActionChr(actType: TugColAction; col,
-  row: integer; AValue: char): char;
+function TUtilGrillaBase.procDefActionChr(actType: TugColAction;
+  var ValidStr: string; col, row: integer; AValue: char): char;
 begin
   case actType of
   ucaRead: begin  //Se pide leer un valor de la grilla
@@ -616,16 +612,17 @@ begin
     exit;
   end;
   ucaValidStr: begin  //Se pide validación
-    if length(cols[col].ValidStr) <> 1 then begin
-      MsjError:='Campo "' + cols[col].nomCampo + '" no puede ser de un caracter.';
+    if length(ValidStr) <> 1 then begin
+      MsjError:='Campo "' + cols[col].nomCampo + '" debe ser de un caracter.';
     end;
   end;
   end;
 end;
-function TUtilGrillaBase.procDefActionNum(actType: TugColAction; col,
-  row: integer; AValue: double): double;
+function TUtilGrillaBase.procDefActionNum(actType: TugColAction;
+  var ValidStr: string; col, row: integer; AValue: double): double;
 var
   n: Double;
+  Err: string;
 begin
   case actType of
   ucaRead: begin  //Se pide leer un valor de la grilla
@@ -639,15 +636,25 @@ begin
     exit;
   end;
   ucaValidStr: begin  //Se pide validación en cadena
-    if not TryStrToFloat(cols[col].ValidStr, n) then begin  //debe ser convertible a flotante
+    if (ValidStr <> '') and (ValidStr[1]='+')  then begin
+      //Puede ser expresión, hacemos el favor de evaluarla
+      n := EvaluarExp(ValidStr, Err);
+      if Err<>'' then begin
+        MsjError := 'Error en formato de: "' + cols[col].nomCampo + '"';
+        exit;
+      end;
+      //Se puede evaluar
+      ValidStr := FloatToStr(n);
+    end;
+    if not TryStrToFloat(ValidStr, n) then begin  //debe ser convertible a flotante
       MsjError := 'Error en formato de: "' + cols[col].nomCampo + '"';
       exit;
     end;
   end;
   end;
 end;
-function TUtilGrillaBase.procDefActionBool(actType: TugColAction; col,
-  row: integer; AValue: boolean): boolean;
+function TUtilGrillaBase.procDefActionBool(actType: TugColAction;
+  var ValidStr: string; col, row: integer; AValue: boolean): boolean;
 begin
   case actType of
   ucaRead: begin  //Se pide leer un valor de la grilla
@@ -664,15 +671,15 @@ begin
     exit;
   end;
   ucaValidStr: begin  //Se pide validación en cadena
-    if (cols[col].ValidStr <> 'V') and (cols[col].ValidStr <> 'F') then begin
+    if (ValidStr <> 'V') and (ValidStr <> 'F') then begin
       MsjError := 'Error en formato de: "' + cols[col].nomCampo + '"';
       exit;
     end;
   end;
   end;
 end;
-function TUtilGrillaBase.procDefActionDatTim(actType: TugColAction; col,
-  row: integer; AValue: TDateTime): TDateTime;
+function TUtilGrillaBase.procDefActionDatTim(actType: TugColAction;
+  var ValidStr: string; col, row: integer; AValue: TDateTime): TDateTime;
 var
   n: TDateTime;
 begin
@@ -688,7 +695,7 @@ begin
     exit;
   end;
   ucaValidStr: begin  //Se pide validación en cadena
-    if not TryStrToDateTime(cols[col].ValidStr, n) then begin  //debe ser convertible a flotante
+    if not TryStrToDateTime(ValidStr, n) then begin  //debe ser convertible a flotante
       MsjError := 'Error en formato de: "' + cols[col].nomCampo + '"';
       exit;
     end;
@@ -848,6 +855,9 @@ function TUtilGrillaBase.PegarACampo: boolean;
     if col>grilla.ColCount-1 then exit;;
     if row>grilla.RowCount-1 then exit;
     if not cols[col].editable then exit;
+    //Quita caracteres raros al final
+    while (txt<>'') and (txt[length(txt)] in [#13,#10,#32]) do
+       delete(txt, length(txt), 1);
     if grilla.Cells[col, row] <> txt then begin
       grilla.Cells[col, row] := txt;
       Result := true;  //Hubo cambios
