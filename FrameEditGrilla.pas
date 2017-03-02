@@ -45,12 +45,14 @@ type
     procedure acEdiPegarExecute(Sender: TObject);
     procedure acEdiSubirExecute(Sender: TObject);
   private
-    function griLeerColorFondo(col, fil: integer): TColor;
+    procedure EstadoAcciones(estado: boolean);
+    function gri_LeerColorFondo(col, fil: integer): TColor;
+    procedure griMouseUpFixedCol(Button: TMouseButton; row, col: integer);
+    procedure griMouseUpNoCell(Button: TMouseButton; row, col: integer);
     procedure gri_FinEditarCelda(var eveSal: TEvSalida; col, fil: integer;
       ValorAnter, ValorNuev: string);
     procedure gri_KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure gri_MouseUp(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
+    procedure gri_MouseUpCell(Button: TMouseButton; row, col: integer);
   public
     gri: TGrillaEdicFor;
     Modificado  : boolean;
@@ -132,7 +134,7 @@ begin
 end;
 function TfraEditGrilla.AgregarFiltro(proc: TUtilProcFiltro): integer;
 begin
-  gri.AgregarFiltro(proc);
+  Result := gri.AgregarFiltro(proc);
 end;
 procedure TfraEditGrilla.Filtrar;
 begin
@@ -142,21 +144,44 @@ function TfraEditGrilla.FilVisibles: integer;
 begin
   Result := gri.filVisibles;
 end;
+procedure TfraEditGrilla.EstadoAcciones(estado: boolean);
+begin
+//  for i:=0 to ActionList1.ActionCount-1 do begin
+//    ActionList1.Actions[i].Enabled := estado;
+//  end;
+  acEdiCopCel.Enabled:=estado;
+  acEdiCopFil.Enabled:=estado;
+  acEdiPegar.Enabled:=estado;
+  acEdiNuevo.Enabled:=estado;
+  acEdiElimin.Enabled:=estado;
+  acEdiSubir.Enabled:=estado;
+  acEdiBajar.Enabled:=estado;
+end;
 //Manejo de eventos
-procedure TfraEditGrilla.gri_MouseUp(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
-var
-  ACol, ARow: Longint;
+procedure TfraEditGrilla.gri_MouseUpCell(Button: TMouseButton; row, col: integer);
 begin
   if Button = mbRight then begin
-    grilla.MouseToCell(X, Y, ACol, ARow );
-    if ARow<1 then exit;   //protección
-    if ACol = 0 then begin
-      //Columna fija
-      PopupMenu1.PopUp;
-    end else begin
-      PopupMenu1.PopUp;
-    end;
+    EstadoAcciones(true);
+    acEdiCopFil.Enabled:=false;
+    PopupMenu1.PopUp;
+  end;
+end;
+procedure TfraEditGrilla.griMouseUpFixedCol(Button: TMouseButton; row,
+  col: integer);
+begin
+  if Button = mbRight then begin
+    EstadoAcciones(true);
+    acEdiCopCel.Enabled:=false;
+    PopupMenu1.PopUp;
+  end;
+end;
+procedure TfraEditGrilla.griMouseUpNoCell(Button: TMouseButton; row,
+  col: integer);
+begin
+  if Button = mbRight then begin
+    EstadoAcciones(false);
+    acEdiNuevo.Enabled:=true;
+    PopupMenu1.PopUp;
   end;
 end;
 procedure TfraEditGrilla.ValidarGrilla;
@@ -207,7 +232,7 @@ procedure TfraEditGrilla.gri_KeyDown(Sender: TObject; var Key: Word;
 acciones, porque se quiere qie estos accesos solo funciones cuando la grilal tiene
 el enfoque.}
 var
-  filAct: Integer;
+  filAct, uFil, f: Integer;
 begin
   if Key = VK_APPS then begin  //Menú contextual
     PopupMenu1.PopUp;
@@ -239,6 +264,26 @@ begin
     acEdiBajarExecute(self);
     Key := 0;  //para que no desplaze
   end;
+  if (Shift = []) and (Key = VK_RETURN) then begin
+    uFil := UltimaFilaVis(grilla);
+    if grilla.Row = uFil  then begin
+      //Está en la última fila. Agrega una fila al final.
+      grilla.InsertColRow(false, grilla.RowCount);
+      f := grilla.RowCount-1;  //fila agregada
+      //Llena los campos por defecto.
+      if OnReqNuevoReg<>nil then OnReqNuevoReg(f);
+      //Ubica fila seleccionada
+      grilla.Row := f;
+      grilla.Col := 1;
+      //Actualiza
+      gri.NumerarFilas;
+      Modificado := true;
+      if OnGrillaModif<>nil then OnGrillaModif(umdFilAgre);
+    end;
+  end;
+  if (Shift = [ssCtrl]) and (Key = VK_DELETE) then begin
+    acEdiEliminExecute(Self);
+  end;
 end;
 procedure TfraEditGrilla.gri_FinEditarCelda(var eveSal: TEvSalida; col,
   fil: integer; ValorAnter, ValorNuev: string);
@@ -256,12 +301,11 @@ begin
     end;
   end;
 end;
-function TfraEditGrilla.griLeerColorFondo(col, fil: integer): TColor;
+function TfraEditGrilla.gri_LeerColorFondo(col, fil: integer): TColor;
 begin
   if OnLeerColorFondo<>nil then Result := OnLeerColorFondo(col, fil)
   else Result := clWhite;
 end;
-
 constructor TfraEditGrilla.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -273,10 +317,12 @@ begin
   gri.OpEncabezPulsable:=true;
   gri.OpResaltarEncabez:=true;
   //Configura eventos
-  gri.OnMouseUp       := @gri_MouseUp;
+  gri.OnMouseUpCell   := @gri_MouseUpCell;
+  gri.OnMouseUpFixedCol:=@griMouseUpFixedCol;
+  gri.OnMouseUpNoCell:=@griMouseUpNoCell;
   gri.OnKeyDown       := @gri_KeyDown;
   gri.OnFinEditarCelda:= @gri_FinEditarCelda;
-  gri.OnLeerColorFondo:= @griLeerColorFondo;
+  gri.OnLeerColorFondo:= @gri_LeerColorFondo;
 end;
 destructor TfraEditGrilla.Destroy;
 begin
@@ -340,12 +386,6 @@ begin
   end;
   //Llena los campos por defecto.
   if OnReqNuevoReg<>nil then OnReqNuevoReg(f);
-//  colCodigo.ValStr[f] := '##'+IntToStr(grilla.RowCount);
-//  colPreUni.ValNum[f] := 0;
-//  colStock.ValNum[f] := 0;
-//  colPreCos.ValNum[f] := 0;
-//  colFecCre.ValDatTim[f] := now;
-//  colFecMod.ValDatTim[f] := now;
   //Ubica fila seleccionada
   grilla.Row := f;
   //Actualiza

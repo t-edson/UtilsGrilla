@@ -1,31 +1,14 @@
 {
 DESCRIPCIÓN
 Incluye la definición del objeto TUtilGrilla, con rutinas comunes para el manejo de
-grillas. Se incluye TUtilGrilla en esta unidad separada de BasicGrilla, porque incluye a
-FrameUtilsGrilla, que depende también de BasicGrilla.
-
-CAMBIOS EN LA VERSIÓN 0.5
-Se pasa a usar el campo Object[] de la columna cero, para TUtilGrillaFil. Ya no se usa la
-columna 3.
-Se crea la opción "OpSelMultiFila", para permitir seleccionar múltiples filas en
-TUtilGrillaFil.
-Se incluye el método EsFilaSeleccionada() en TUtilGrillaFil, para determinar si una fila
-está seleccionada o no.
-Se agrega el método TUtilGrillaFil.AgrEncabIco(), para agregar columnas con íconos.
-Se agrega el campo TUtilGrillaFil.ImageList, para poder asignar una lista de imágenes
-a mostrar en las columnas de tipo ICO.
-
-CAMBIOS EN LA VERSIÓN 0.4
-Se crea el campo TugGrillaCol.idx
-Se crean los métodos AgrEncabTxt() y AgrEncabNum()
-Se cambia el tipo que devuelve AgrEncab(). Ahora devuelve TugGrillaCol.
+grillas.
 }
 unit UtilsGrilla;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, windows, SysUtils, fgl, Grids, Clipbrd, Menus, Controls,
-  Graphics, LCLProc, BasicGrilla;
+  Classes, windows, SysUtils, fgl, Types, Grids, Clipbrd, Menus, Controls,
+  Graphics, LCLProc, BasicGrilla, MisUtils;
 const
   ALT_FILA_DEF = 22;          //Altura por defecto para las grillas de datos
 type
@@ -121,7 +104,7 @@ type
   end;
   TGrillaDBCol_list =   specialize TFPGObjectList<TugGrillaCol>;
 
-  TEvMouseGrillaDB = procedure(Button: TMouseButton; row, col: integer) of object;
+  TEvMouseGrilla = procedure(Button: TMouseButton; row, col: integer) of object;
 
   { TUtilGrillaBase }
   {Este es el objeto principal de la unidad. TUtilGrilla, permite administrar una grilla
@@ -155,7 +138,6 @@ type
   TUtilGrillaBase = class
   protected  //campos privados
     FMenuCampos   : boolean;
-    PopupCampos   : TPopupMenu;  //Menú contextual para mostrar/ocultar campos
     popX, popY    : integer;     //posición donde se abre el menú contextual
     procedure SetMenuCampos(AValue: boolean);
     procedure grillaKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState); virtual;
@@ -193,7 +175,8 @@ type
   public
     grilla     : TStringGrid;  //referencia a la grila de trabajo
     cols       : TGrillaDBCol_list;  //Información sobre las columnas
-    PopUpCells : TPopupMenu;  //Menú para las celdad
+    PopupHeadInt: TPopupMenu; //Menú contextual interno, para mostrar/ocultar campos
+    PopUpCells : TPopupMenu;  //Menú para las celdas
     OnKeyDown  : TKeyEvent; {Se debe usar este evento en lugar de usar directamente
                             el evento de la grilla, ya que TGrillaDB, usa ese evento.}
     OnKeyPress : TKeyPressEvent; {Se debe usar este evento en lugar de usar directamente
@@ -202,8 +185,10 @@ type
 //                          el evento de la grilla, ya que TGrillaDB, usa ese evento.}
     OnMouseDown: TMouseEvent;
     OnMouseUp  : TMouseEvent;
-    OnMouseUpHeader: TEvMouseGrillaDB;
-    OnMouseUpCell: TEvMouseGrillaDB;
+    OnMouseUpCell  : TEvMouseGrilla;
+    OnMouseUpHeader: TEvMouseGrilla;
+    OnMouseUpFixedCol: TEvMouseGrilla;
+    OnMouseUpNoCell: TEvMouseGrilla;
     //Definición de encabezados
     procedure IniEncab;
     function AgrEncab(titulo: string; ancho: integer; indColDat: int16=-1;
@@ -416,42 +401,62 @@ procedure TUtilGrillaBase.grillaMouseUp(Sender: TObject; Button: TMouseButton;
 var
   it: TMenuItem;
   i: Integer;
-  col, row: integer;
+  col, row, uf: integer;
+  MaxYCoordCeldas: LongInt;
 begin
   //Pasa el evento
   if OnMouseUp<>nil then OnMouseUp(Sender, Button, Shift, X, Y);
-  //Verifica posición en donde se soltó el mouse
-  grilla.MouseToCell(X, Y, Col, Row );
+//debugln('MouseCoordY=' + IntToStr(grilla.MouseCoord(X,y).y));
+  //Primero analiza si se está más allá de las celdas existentes.
+  {Detectar si el puntero está en una zona sin celdas, no es sencillo, con las funciones
+  de TSTringGrid. Se probó con MouseToCell(), MouseToGridZone(), MouseToLogcell(), pero
+  todas ellas fallaron.}
+  //Valida si escapa de la últiam fila mostrada.
+  uf := UltimaFilaVis(grilla);
+  if uf<>-1 then begin
+    MaxYCoordCeldas := grilla.CellRect(0, uf).Bottom;
+//    debugln('MaxYCoordCeldas=%d', [MaxYCoordCeldas]);
+    if Y>MaxYCoordCeldas then begin
+      //Está fuera de la celda
+      if OnMouseUpNoCell<>nil then OnMouseUpNoCell(Button, -1, -1);
+      exit;
+    end;
+  end;
+//Debe estar dentro de alguna de las celdas
+  grilla.MouseToCell(X, Y, Col, Row );   {Verifica la elda en donde se soltó el mouse.
+                                    Aunque MouseToCell(), parece indciar más bien, la celda
+                                    seleccionada, cuando se soltó el mouse.}
   if (Row < grilla.FixedRows) and (Col>=grilla.FixedCols) then begin
     //Es el encabezado
     if OnMouseUpHeader<>nil then OnMouseUpHeader(Button, row, col);
     if FMenuCampos and (Button = mbRight) then begin
       {Se ha configurado un menú contextual para los campos.}
       //Configura el menú
-      PopupCampos.Items.Clear;
+      PopupHeadInt.Items.Clear;
       for i:=0 to cols.Count-1 do begin
-        it := TMenuItem.Create(PopupCampos.Owner);
+        it := TMenuItem.Create(PopupHeadInt.Owner);
         it.Caption:=cols[i].nomCampo;
         it.Checked := cols[i].visible;
         it.OnClick:=@itClick;
-        PopupCampos.Items.Add(it);
+        PopupHeadInt.Items.Add(it);
       end;
       //Muestra
       popX := Mouse.CursorPos.x;
       popY := Mouse.CursorPos.y;
-      PopupCampos.PopUp(popX, popY);
+      PopupHeadInt.PopUp(popX, popY);
     end;
   end else if Col<grilla.FixedCols then begin
+    if OnMouseUpFixedCol<>nil then OnMouseUpFixedCol(Button, row, col);
     //En columnas fijas
   end else begin
-    //Es una celda común o en posición inválida
+    //Es una celda común
+    if OnMouseUpCell<>nil then OnMouseUpCell(Button, row, col);
     if Button = mbRight then begin
       //Implementa la selección con botón derecho
       grilla.Row:=row;
       grilla.Col:=col;
       if PopUpCells<>nil then PopUpCells.PopUp;
     end;
-    if OnMouseUpCell<>nil then OnMouseUpCell(Button, row, col);
   end;
 end;
 procedure TUtilGrillaBase.grillaPrepareCanvas(sender: TObject; aCol, aRow: Integer;
@@ -476,11 +481,11 @@ begin
   it := TMenuItem(Sender);   //debe ser siempre de este tipo
   it.Checked := not it.Checked;
   //Actualiza visibilidad, de acuerdo al menú contextual
-  for i:=0 to PopupCampos.Items.Count-1 do begin
-    cols[i].visible := PopupCampos.Items[i].Checked;
+  for i:=0 to PopupHeadInt.Items.Count-1 do begin
+    cols[i].visible := PopupHeadInt.Items[i].Checked;
   end;
   DimensColumnas;  //dimesiona grillas
-  PopupCampos.PopUp(popX, popY);  //abre nuevamente, para que no se oculte
+  PopupHeadInt.PopUp(popX, popY);  //abre nuevamente, para que no se oculte
 end;
 procedure TUtilGrillaBase.DimensColumnas;
 var
@@ -503,12 +508,12 @@ begin
     //Ya tiene grilla asignada
     if AValue=true then begin
       //Se pide activar el menú contextual
-      if PopupCampos<>nil then PopupCampos.Destroy;  //ya estaba creado
-      PopupCampos := TPopupMenu.Create(grilla);
+      if PopupHeadInt<>nil then PopupHeadInt.Destroy;  //ya estaba creado
+      PopupHeadInt := TPopupMenu.Create(grilla);
     end else begin
       //Se pide desactivar el menú contextual
-      if PopupCampos<>nil then PopupCampos.Destroy;
-      PopupCampos := nil;
+      if PopupHeadInt<>nil then PopupHeadInt.Destroy;
+      PopupHeadInt := nil;
     end;
   end;
 end;
@@ -835,13 +840,40 @@ begin
 end;
 function TUtilGrillaBase.PegarACampo: boolean;
 {Pega el valor del portapapeles en la celda. Si hubo cambio, devuelve TRUE.}
+  function PegaEnCelda(col, row: integer; txt: string): boolean;
+  {Pega un valor en la celda indicada, si es diferente.
+  Si produce cambios, devuelve TRUE.}
+  begin
+    Result := false;   //Por defecto, no hay cambios
+    if col>grilla.ColCount-1 then exit;;
+    if row>grilla.RowCount-1 then exit;
+    if not cols[col].editable then exit;
+    if grilla.Cells[col, row] <> txt then begin
+      grilla.Cells[col, row] := txt;
+      Result := true;  //Hubo cambios
+    end;
+  end;
+var
+  txt: String;
+  c, cIni: Integer;
+  campos: TStringDynArray;
 begin
   if (grilla.Row = -1) or  (grilla.Col = -1) then exit;
-  if grilla.Cells[grilla.Col, grilla.Row] <> Clipboard.AsText then begin
-    grilla.Cells[grilla.Col, grilla.Row] := Clipboard.AsText;
-    Result := true;
-  end else begin
+  txt := Clipboard.AsText;
+  //Verifica, si vienen varios campos, en la cadena (Como suele copiar Excel)
+  if pos(#9, txt) <> 0 then begin
+    //Hay varios campos en el protapapeles
     Result := false;
+    campos := explode(#9, txt);  //separa
+    cIni := grilla.Col;  //Columna inicial
+    for c := 0 to high(campos) do begin  //pega en las columnas
+      if PegaEnCelda(cIni + c, grilla.Row, campos[c]) then begin
+        Result:= true;  //hubo cambios
+      end;
+    end;
+  end else begin
+    //Hay un solo campo
+    Result := PegaEnCelda(grilla.Col, grilla.Row, txt);
   end;
 end;
 //Constructor y destructor
@@ -855,7 +887,7 @@ destructor TUtilGrillaBase.Destroy;
 begin
   cols.Destroy;
   //Elimina menú. Si se ha creado
-  if PopupCampos<>nil then PopupCampos.Destroy;
+  if PopupHeadInt<>nil then PopupHeadInt.Destroy;
   inherited Destroy;
 end;
 { TUtilGrilla }

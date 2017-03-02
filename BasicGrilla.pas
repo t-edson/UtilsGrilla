@@ -38,6 +38,7 @@ end;
 function CumpleFiltro(const cad: string; const buscar: string): boolean;
 //Funciones para el tratamiento de grillas
 function PrimeraFilaVis(grilla0: TStringGrid): integer;
+function UltimaFilaVis(grilla0: TStringGrid): integer;
 function FilaVisAnterior(grilla0: TStringGrid): integer;
 function FilaVisSiguiente(grilla0: TStringGrid): integer;
 procedure RetrocederAFilaVis(grilla0: TStringGrid);
@@ -125,7 +126,7 @@ function UltimaFilaVis(grilla0: TStringGrid): integer;
 var
   f: Integer;
 begin
-  for f:= grilla0.rowcount -1 downto 1 do begin
+  for f:= grilla0.rowcount -1 downto 0 do begin
     if grilla0.RowHeights[f] <> 0 then exit(f);
   end;
   exit(-1);
