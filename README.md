@@ -122,15 +122,19 @@ Su uso es similar al de TUtilGrilla:
 
 Como un complemento para el manejo de grillas, se incluye el frame FrameFiltCampo.pas, que se comporta como un componente para realizar búsquedas filtrando las filas que no coincidan con el criterio de búsqueda. El algortimo de búsqueda está optimizado para manejar varios miles de filas sin retraso notorio.
 
+Para usar el frame, como cuadro de búsqueda, solo hay que colocarlo en el formulario, donde se encuentra la grilla, como se muestra en la figura. Al colocar el frame, se debe redimensionarlo pensando en que debe contener un cuadro de búsqueda y un combo para elegir el campo de búsqueda. Por defecto el frame viene con un tamaño muy superior al que suele usarse.
+
 ### Configuración simple ###
 
-Para que un FrameFiltCampo, trabaje como filtro, se puede configurar de dos formas. La forma simple consiste en asociarla directamente a un objeto TUtilGrillaFil:
+Para que un TfraFiltCampo, trabaje como filtro, se puede configurar de dos formas. La forma simple consiste en asociarla directamente a un objeto TUtilGrillaFil:
 
 ```
   fraFiltCampo1.Inic(UtilGrilla, 4);   //asocia a un TUtilGrilla
 ```
   
 Y no se necesita nada más. Esta definición asocia el frame a la grilla, configura todos los campos de la grilla, como parte del filtro, y elige el campo 4 (segundo parámetro), como campo por defecto para el filtro. Además configura el evento OnCambiaFiltro, para que se filtre la grilla en cada pulsación de tecla.
+
+Luego de esta configuración, solo bastaría con escribir sobre el editor del frame, para que automáticamente se empiecen a filtrar las filas en la grilla. El filtrado consiste en ocultar las filas que no cumplen con el criterio de búsqueda, se mantienen con un altura predefinida. 
 
 ### Configuración detallada ###
 
@@ -151,6 +155,17 @@ Adicionalmente, para determinar cuando cambia el filtro (sea porque se ha modifi
 Luego, lo más común sería que este método, llame al método Filtrar() de UtilGrilla.
 
 Hay que notar que es posible agregar varios FrameFiltCampo, a un TUtilGrilla, y que funcionen a modo de filtro en cascada.
+
+### Tipos de búsqueda con TfraFiltCampo ###
+
+El tipo de búsueda por defecto, con TfraFiltCampo, consiste en que se buscarán en todas las filas, en el campo seleccionado, para ver si el contenido de texto mostrado (sea numérico, booleano, etc), incluye al texto escrito como palabra de búsqueda en el frame TfraFiltCampo (específicamente en el control TEdit, del frame).
+
+Es decir, que la búsqueda es equivalente al operador LIKE del lenguaje SQL, cuando trabaja con campos de texto.
+
+Sin embargo, cuando la búsqueda se hace en campos numéricos, es posible usar los operadores de comparación: =, <, >, <=, >= o <>. 
+
+Así por ejemplo, si se escribe en el frame: ">5", se hará la comparación, en el campo indicado, comparando la cantidad a modo de número, mostrando las filas que etngan ese campo como un número mayor a 5.
+
 
 ### TfraFiltCampo con StringGrid ###
 
