@@ -122,33 +122,39 @@ Su uso es similar al de TUtilGrilla:
 
 Como un complemento para el manejo de grillas, se incluye el frame FrameFiltCampo.pas, que se comporta como un componente para realizar búsquedas filtrando las filas que no coincidan con el criterio de búsqueda. El algortimo de búsqueda está optimizado para manejar varios miles de filas sin retraso notorio.
 
+### Configuración simple ###
+
 Para que un FrameFiltCampo, trabaje como filtro, se puede configurar de dos formas. La forma simple consiste en asociarla directamente a un objeto TUtilGrillaFil:
 
 ```
-  fraFiltCampo.Inic(UtilGrilla, 4);  
+  fraFiltCampo1.Inic(UtilGrilla, 4);   //asocia a un TUtilGrilla
 ```
   
-Esta definición asocia el frame a la grilla, configura todos los campos de la grilla, como parte del filtro, y elige el campo 4 (segundo parámetro), como campo por defecto para el filtro. Además configura el evento OnCambiaFiltro, para que se filtre la grilla en cada pulsación de tecla.
+Y no se necesita nada más. Esta definición asocia el frame a la grilla, configura todos los campos de la grilla, como parte del filtro, y elige el campo 4 (segundo parámetro), como campo por defecto para el filtro. Además configura el evento OnCambiaFiltro, para que se filtre la grilla en cada pulsación de tecla.
 
-La forma detallada, la que permite más libertad, sería:
+### Configuración detallada ###
+
+La forma más detallada, la que permite más libertad, sería:
 
 ```
-  fraFiltCampo.Inic(StringGrid1);   //asocia a grilla
-  fraFiltCampo.LeerCamposDeGrilla(UtilGrilla.cols, 1);  //configura menú de campos
-  UtilGrilla.AgregarFiltro(@fraFiltCampo.Filtro);  //agrega el filtro
+  fraFiltCampo1.Inic(StringGrid1);   //asocia a grilla
+  fraFiltCampo1.LeerCamposDeGrilla(UtilGrilla.cols, 1);  //configura menú de campos
+  UtilGrilla.AgregarFiltro(@fraFiltCampo1.Filtro);  //agrega el filtro
 ```
 
 Adicionalmente, para determinar cuando cambia el filtro (sea porque se ha modificado el texto de búsqueda o se cambia el campo de trabajo), se debe interceptar el método "OnCambiaFiltro". 
 
 ```
-  fraFiltCampo.OnCambiaFiltro:=@fraFiltCampo_CambiaFiltro;
+  fraFiltCampo1.OnCambiaFiltro:=@fraFiltCampo_CambiaFiltro;
 ```
 
 Luego, lo más común sería que este método, llame al método Filtrar() de UtilGrilla.
- 
+
 Hay que notar que es posible agregar varios FrameFiltCampo, a un TUtilGrilla, y que funcionen a modo de filtro en cascada.
 
-Si bien fraFiltCampo, se ha creado para trabajar con un objeto TUtilGrilla, también es posible usarlo, con un TStringGrid común:
+### TfraFiltCampo con StringGrid ###
+
+Si bien TfraFiltCampo, se ha creado para trabajar con un objeto TUtilGrilla, también es posible usarlo, con un TStringGrid común:
 
 ```
   fraFiltCampo1.Inic(StringGrid1);
