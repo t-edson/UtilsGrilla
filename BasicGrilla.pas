@@ -3,7 +3,7 @@ unit BasicGrilla;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, windows, SysUtils, types, LCLType, StdCtrls, Grids, Forms, LCLProc,
+  Classes, SysUtils, types, LCLType, StdCtrls, Grids, Forms, LCLProc,
   Controls, MisUtils;
 type
 { TListaCompletado }

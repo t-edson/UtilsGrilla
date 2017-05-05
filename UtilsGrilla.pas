@@ -7,8 +7,8 @@ unit UtilsGrilla;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, windows, SysUtils, fgl, Types, Grids, Clipbrd, Menus, Controls,
-  Graphics, LCLProc, BasicGrilla, MisUtils;
+  Classes, SysUtils, fgl, Types, Grids, Clipbrd, Menus, Controls,
+  Graphics, LCLProc, LCLType, BasicGrilla, MisUtils;
 const
   ALT_FILA_DEF = 22;          //Altura por defecto para las grillas de datos
 type
