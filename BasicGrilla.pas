@@ -3,8 +3,8 @@ unit BasicGrilla;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, types, LCLType, StdCtrls, Grids, Forms, LCLProc, Controls,
-  MisUtils;
+  Classes, windows, SysUtils, types, LCLType, StdCtrls, Grids, Forms, LCLProc,
+  Controls, MisUtils;
 type
 { TListaCompletado }
 {Representa a una lista con opciones de autocompletado. Usada para llenar a un campo
@@ -50,6 +50,7 @@ function FiltrarGrilla(grilla0: TStringGrid; buscar: string;
 procedure ProcTeclasDireccion(grilla0: TStringGrid; var Key: Word;
   Shift: TShiftState; alt_fila: integer);
 function AnalizarCeldas(grilla0: TStringGrid): string;
+function InformSeleccionGrilla(grilla0: TStringGrid): string;
 //Funciones para mover datos de StringList a StringGrid y viceversa
 procedure StringListAGrilla(list: TStringList; grilla: TStringGrid; sep:char = #129);
 procedure GrillaAStringList(grilla: TStringGrid; list: TStringList; sep:char = #129);
@@ -454,6 +455,39 @@ begin
       end;
     end;
     Result := 'Cta=' + FloatToStr(sum);
+  end;
+end;
+function InformSeleccionGrilla(grilla0: TStringGrid): string;
+var
+  i, cont: Integer;
+  sum  : double;
+  sel: TGridRect;
+  c, f: LongInt;
+  errConv: Boolean;
+  val: double;
+begin
+  cont := 0;
+  sum := 0;
+  errConv := false;
+  for i:=0 to grilla0.SelectedRangeCount-1 do begin
+    sel := grilla0.SelectedRange[i];
+    for c := sel.Left to sel.Right do begin
+      if grilla0.ColWidths[c] = 0 then continue;
+      for f := sel.top to sel.Bottom do begin
+        if grilla0.RowHeights[f] = 0 then continue;
+        if TryStrToFloat(grilla0.Cells[c, f], val) then begin
+          sum := sum + val;
+        end else begin
+          errConv := true;
+        end;
+        inc(cont);
+      end;
+    end;
+  end;
+  if errConv then begin  //Hubo error de convrsión
+    Result := Format('Cuenta=%d', [cont]);
+  end else begin
+    Result := Format('Cuenta=%d   Suma=%n   Promedio=%n', [cont, sum, sum/cont]);
   end;
 end;
 //Funciones para mover datos de StringList a StringGrid y viceversa

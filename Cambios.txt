@@ -10,6 +10,7 @@ Se cambia el nombre el tipo de evento TEvMouseGrillaDB a TEvMouseGrilla;
 Se cambia el valor mínimo para UltimaFilaVis(), en la unidad BasicGrilla.
 Se agrega un parámetro adicional, a los eventos de tipo "TugProcColAction<Tipo>", para que puedan
 recibir la cadena de validación directamente y no tengan que usar una variable auxiliar.
+Se mueve el método grillaDrawCell() y otros relacionados. a protected.
 
 0.7
 ===

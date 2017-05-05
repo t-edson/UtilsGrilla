@@ -272,11 +272,12 @@ type
   TUtilGrillaFil = class(TUtilGrilla)
   private
     FOpSelMultiFila: boolean;
+  protected
     procedure DibCeldaTexto(aCol, aRow: Integer; const aRect: TRect);
     procedure DibCeldaIcono(aCol, aRow: Integer; const aRect: TRect);
+    procedure SetOpSelMultiFila(AValue: boolean);
     procedure grillaDrawCell(Sender: TObject; aCol, aRow: Integer;
       aRect: TRect; aState: TGridDrawState); virtual;
-    procedure SetOpSelMultiFila(AValue: boolean);
   public //Opciones de la grilla
     property OpSelMultiFila: boolean  //activa el dimensionamiento de columnas
              read FOpSelMultiFila write SetOpSelMultiFila;
@@ -920,7 +921,7 @@ begin
   grilla.RowHeights[f] := ALT_FILA_DEF;
 end;
 procedure TUtilGrilla.Filtrar;
-{Ejecuta un filtrado, de las filsa de la grilla, uaando los filtros, previamente
+{Ejecuta un filtrado, de las filsa de la grilla, usando los filtros, previamente
 agregados a TUtilGrilla. Actualza "filVisibles".}
 var
   fil: Integer;
