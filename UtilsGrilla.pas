@@ -463,6 +463,7 @@ var
 begin
   //Activa el alineamiento
   if aRow = 0 then exit;  //no cambia el encabezado
+  if aCol>=cols.Count then exit;
   if cols[aCol].alineam <> taLeftJustify then begin
     MyTextStyle := grilla.Canvas.TextStyle;
     MyTextStyle.Alignment := cols[aCol].alineam;
@@ -623,7 +624,6 @@ function TUtilGrillaBase.procDefActionNum(actType: TugColAction;
   ValidStr: string; col, row: integer; AValue: double): double;
 var
   n: Double;
-  Err: string;
 begin
   case actType of
   ucaRead: begin  //Se pide leer un valor de la grilla
