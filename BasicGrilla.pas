@@ -621,11 +621,13 @@ procedure TListaCompletado.EditCtrl_Exit(Sender: TObject);
 var
   tieneEnfoque: TWinControl;
 begin
-  if ListBox.Parent is TForm then begin
-    tieneEnfoque := TForm(ListBox.Parent).ActiveControl;
+  //Identifica al Form padre, usnado "EditCtrl"
+  if EditCtrl.Owner is TForm then begin
+    tieneEnfoque := TForm(EditCtrl.Owner).ActiveControl;
   end else begin
     tieneEnfoque := nil;
   end;
+  //Verifica si el que tiene el enfoque es el "listBox"
   if tieneEnfoque <> listBox then begin
     //Si el enfoque pasó a otro control que no sea la lista
     ListBox.Visible:=false;  //protección

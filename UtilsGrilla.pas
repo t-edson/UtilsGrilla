@@ -638,7 +638,13 @@ begin
   end;
   ucaValidStr: begin  //Se pide validación en cadena
     if not TryStrToFloat(ValidStr, n) then begin  //debe ser convertible a flotante
-      MsjError := 'Error en formato de: "' + cols[col].nomCampo + '"';
+      //Hay error en la conversión
+      if (ValidStr<>'') and (ValidStr[1] in ['a'..'z','A'..'Z','_']) then begin
+        //Parece ser una cadena
+        MsjError := 'Campo "' + cols[col].nomCampo + '" debe ser numérico.';
+      end else begin
+        MsjError := 'Error en formato de: "' + cols[col].nomCampo + '"';
+      end;
       exit;
     end;
   end;
