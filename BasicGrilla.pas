@@ -691,6 +691,7 @@ begin
   ListBox.OnKeyPress := @listBox_KeyPress;
   listBox.OnExit     := @listBox_Exit;
   listBox.OnDblClick := @listBox_DblClick;
+  listBox.BringToFront;
   EditCtrl.OnChange  := @EditCtrl_Change;
   EditCtrl.OnDblClick:= @EditCtrl_DblClick;
   EditCtrl.OnKeyDown := @EditCtrl_KeyDown;

@@ -26,8 +26,7 @@ Las facilidades que ofrece TUtilGrilla son:
 - Permite ocultar fácilmente ciertas columnas.
 - Permite activar opciones comunes (como el dimensionado del ancho de las columnas), de forma sencilla, sin necesidad de usar conjuntos.
 - Permite crear estructuras de encabezados diversas para una misma grilla.
-- Permite asociar una columna de una grilla a un índice, para facilitar la carga de 
-campos desde un archivo de texto o desde base de datos.
+- Permite asociar una columna de una grilla a un índice, para facilitar la carga de campos desde un archivo de texto o desde base de datos.
 - Brinda un soporte para posteriormente incluir, filtros por filas, en la grilla.
 - Incluye funciones de conversión de tipos, de modo que, por ejemplo, permiten leer o escribir valores de tipo "booleano", directamente desde o hacia la grilla.
 
@@ -96,7 +95,7 @@ Esta clase es similar a TUtilGrilla, pero se maneja a la grilla, por filas, perm
 
 Incluye las mismas facilidades de TUtilGrilla, pero adicionalmente:
 - Configura la selección por filas, aunque mantiene identificada a la celda seleccionada.
-- Permite cambiara atributos de las filas (color de fondo, color de texto y atributos de texto)
+- Permite cambiar atributos de las filas (color de fondo, color de texto y atributos de texto)
 - Permite activar y desactivar  la selección múltiple de filas.
 - Permite crear columnas que muestren íconos en lugar de texto.
 
@@ -180,4 +179,51 @@ Si bien TfraFiltCampo, se ha creado para trabajar con un objeto TUtilGrilla, tam
 
 En este caso habría que implementar en fraFiltCampo1CambiaFiltro(), el código que realice el filtrado sobre la grilla.
 
+### Objeto TListaCompletado ###
 
+Esta clase no tiene que ver con grillas, pero se incluye como una utilidad adicional.
+
+TListaCompletado permite implementar la funcionalidad de lista desplegable cuando se llena un control TEdit. 
+
+En su forma de trabajo normal, se requiere de una grilla en donde deben estar los valores que se van a usar para llenar la lista de completado.
+
+Para usarlo se debe primero crear el objeto: 
+
+  completProv := TListaCompletado.Create;
+
+Luego se debe asociarlo a un TEdit, indicando una grilla, y una columna, de donde se debe extraer los valores para la lista de completado del TEdit.
+
+  completProv.Inic(txtEdit, grilla_datos, col_de_grilla_datos);
+  
+Opcionalmente se puede definir los eventos OnSelect y OnEditChange:
+
+  completProv.OnSelect := @Proveed_Seleccionado;
+  completProv.OnEditChange := @Proveed_EditChange;
+
+La utilidad principal del evento OnSelect, es fijar el enfoque al siguiente control después de haber seleccionado un valor para el TEEdit.
+
+Finalmente  se debe destruir el objeto:
+
+  completProv.Destroy;
+
+Los valores a mostrar en la lista se obtienen usando la columna indciada de la grilla, y filtrando por el valor contenido en el TEdit.
+
+Si no se quiere usar una grilla como fuente de datos, se puede usar el evento OnLlenarLista, para implementar una rutina personalizada de llenado. Un ejemplo de rutina de llenado sería:
+
+procedure TfrmIngTareo.Edit1_LlenarLista;
+var
+  lista: TListBox;
+begin
+  lista := completEdit1.listBox;  //Accede a la lista de completado.
+  lista.Clear;
+
+  if CumpleFiltro('aaa' , Edit1.Text) then
+    lista.AddItem('aaa', nil);
+  if CumpleFiltro('bbb' , Edit1.Text) then
+    lista.AddItem('bbb', nil);
+
+  if lista.Count>0 then
+    lista.ItemIndex:=0;  //selecciona el primer elemento
+end;
+
+La función CumpleFiltro(), es una utilidad definida en BasicGrilla, que permite determinar si un texto cumple incluye otro texto.
