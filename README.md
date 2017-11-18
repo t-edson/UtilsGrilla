@@ -189,27 +189,36 @@ En su forma de trabajo normal, se requiere de una grilla en donde deben estar lo
 
 Para usarlo se debe primero crear el objeto: 
 
+```
   completProv := TListaCompletado.Create;
+```
 
 Luego se debe asociarlo a un TEdit, indicando una grilla, y una columna, de donde se debe extraer los valores para la lista de completado del TEdit.
 
+```
   completProv.Inic(txtEdit, grilla_datos, col_de_grilla_datos);
+```
   
 Opcionalmente se puede definir los eventos OnSelect y OnEditChange:
 
+```
   completProv.OnSelect := @Proveed_Seleccionado;
   completProv.OnEditChange := @Proveed_EditChange;
+```
 
 La utilidad principal del evento OnSelect, es fijar el enfoque al siguiente control después de haber seleccionado un valor para el TEEdit.
 
 Finalmente  se debe destruir el objeto:
 
+```
   completProv.Destroy;
+```
 
 Los valores a mostrar en la lista se obtienen usando la columna indciada de la grilla, y filtrando por el valor contenido en el TEdit.
 
 Si no se quiere usar una grilla como fuente de datos, se puede usar el evento OnLlenarLista, para implementar una rutina personalizada de llenado. Un ejemplo de rutina de llenado sería:
 
+```
 procedure TfrmIngTareo.Edit1_LlenarLista;
 var
   lista: TListBox;
@@ -225,5 +234,6 @@ begin
   if lista.Count>0 then
     lista.ItemIndex:=0;  //selecciona el primer elemento
 end;
+```
 
 La función CumpleFiltro(), es una utilidad definida en BasicGrilla, que permite determinar si un texto cumple incluye otro texto.
