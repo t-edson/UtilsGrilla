@@ -51,7 +51,7 @@ Para trabajar con una grilla se tiene dos formas:
   UtilGrilla.IniEncab;
   UtilGrilla.AgrEncab('CAMPO1' , 40);  //Con 40 pixeles de ancho
   UtilGrilla.AgrEncab('CAMPO2' , 60);  //Con 60 pixeles de ancho
-  UtilGrilla.AgrEncab('CAMPO3' , 35, -1, taRightJustify); //Justificado a la derecha
+  UtilGrilla.AgrEncab('CAMPO3' , 35, -1).alineam := taRightJustify; //Justificado a la derecha
   UtilGrilla.FinEncab;
   ...
 ```
