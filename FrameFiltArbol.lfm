@@ -5,6 +5,7 @@ object fraFiltArbol: TfraFiltArbol
   Width = 171
   ClientHeight = 341
   ClientWidth = 171
+  LCLVersion = '1.6.2.0'
   TabOrder = 0
   DesignLeft = 226
   DesignTop = 448

@@ -44,6 +44,7 @@ function FilaVisSiguiente(grilla0: TStringGrid): integer;
 procedure RetrocederAFilaVis(grilla0: TStringGrid);
 procedure AdelantarAFilaVis(grilla0: TStringGrid);
 procedure MovASiguienteColVis(grilla0: TStringGrid);
+procedure MovASiguienteFilVis(grilla0: TStringGrid);
 
 function FiltrarGrilla(grilla0: TStringGrid; buscar: string;
                        campoBusq0, alturaFil0: integer): integer;
@@ -212,6 +213,15 @@ begin
     //deja la misma fila seleccionada
   else  //encontró una columna posterior no oculta
     grilla0.Col := c;
+end;
+procedure MovASiguienteFilVis(grilla0: TStringGrid);
+{Mueve la selección a la siguienet fila visible.}
+var
+  sig: Integer;
+begin
+  sig := FilaVisSiguiente(grilla0);
+  if sig = -1 then exit;
+  grilla0.Row := sig;
 end;
 
 function FiltrarGrilla(grilla0: TStringGrid; buscar: string;
@@ -621,7 +631,7 @@ procedure TListaCompletado.EditCtrl_Exit(Sender: TObject);
 var
   tieneEnfoque: TWinControl;
 begin
-  //Identifica al Form padre, usnado "EditCtrl"
+  //Identifica al Form padre, usando "EditCtrl"
   if EditCtrl.Owner is TForm then begin
     tieneEnfoque := TForm(EditCtrl.Owner).ActiveControl;
   end else begin

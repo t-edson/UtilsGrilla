@@ -1,9 +1,11 @@
+{Define a un frame que permite implementar un filtro (de los que usa UtilsGrill) de
+acuerdo a un árbol.}
 unit FrameFiltArbol;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, ExtCtrls, Buttons, ComCtrls,
-  Grids, LCLType, UtilsGrilla;
+  Classes, SysUtils, Types, FileUtil, Forms, Controls, ExtCtrls, Buttons,
+  ComCtrls, Grids, LCLType, UtilsGrilla, MisUtils;
 
 type
 
@@ -24,10 +26,12 @@ type
     colCat, colSubcat: TugGrillaCol;
     nombNodPrinc: string;
     procedure ProCambiaFiltro;
+    function GetFiltroArbolCat: string;
+    procedure SetFiltroArbolCat(AVal: string);
   public
     OnCambiaFiltro: procedure of object;
-    OnSoliCerrar: procedure of object;
-    function FiltroArbolCat: string;
+    OnSoliCerrar: procedure(Sender: TObject) of object;  //Cuando se pulsa el botón [X]
+    property FiltroArbolCat: string read GetFiltroArbolCat write SetFiltroArbolCat;
     procedure LeerCategorias;
     function Filtro(const f: integer): boolean;
     procedure Inic(gri: TUtilGrilla; col1, col2: TugGrillaCol; nodPrinc: string); virtual;
@@ -42,7 +46,7 @@ begin
 end;
 procedure TfraFiltArbol.btnCerrPanelClick(Sender: TObject);
 begin
-  if OnSoliCerrar<>nil then OnSoliCerrar();
+  if OnSoliCerrar<>nil then OnSoliCerrar(self);
 end;
 procedure TfraFiltArbol.TreeView1KeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
@@ -52,10 +56,9 @@ begin
     Key := 0;
   end;
 end;
-
-function TfraFiltArbol.FiltroArbolCat: string;
-{Devuelve el filtro que aplicaría el árbol de categorías. Si no se aplica el
-filtro del árbol de categorías, devuelve cadena nula, }
+function TfraFiltArbol.GetFiltroArbolCat: string;
+{Devuelve el filtro (una cadena) que aplicaría el árbol de categorías.
+ Si no se aplica el filtro del árbol de categorías, devuelve cadena nula, }
 var
   nodSel: TTreeNode;
 begin
@@ -70,12 +73,44 @@ begin
     exit('');
   end;
 end;
-
+procedure TfraFiltArbol.SetFiltroArbolCat(AVal: string);
+{Fija una cadena como filtro, al arcbol de categorías}
+var
+  a: TStringDynArray;
+  nod, nod2: TTreeNode;
+begin
+  if AVal='' then exit;
+  a := Explode('-', AVal);
+  if high(a) = 0 then begin
+      //Solo 1 elemento
+      for nod in TreeView1.Items do if nod.Level = 1 then begin
+        //Selecciona la categoría
+        if nod.Text = AVal then begin
+          nod.Selected := true;
+          exit;
+        end;
+      end;
+  end else if high(a) = 1 then begin
+      //2 elementos
+      for nod in TreeView1.Items do if nod.Level = 1 then begin
+        //Selecciona la categoría
+        if nod.Text = a[0] then begin
+          //Encontró la categoría
+          for nod2 in TreeView1.Items do if nod2.Level = 2 then begin
+            //Selecciona la categoría
+            if nod2.Text = a[1] then begin
+              nod2.Selected := true;
+              exit;
+            end;
+          end;
+        end;
+      end;
+  end;
+end;
 procedure TfraFiltArbol.ProCambiaFiltro;
 begin
   if griFiltrar<>nil then griFiltrar.Filtrar;
 end;
-
 procedure TfraFiltArbol.LeerCategorias;
   function ExisteCategEnArbol(cat: string): boolean;
   var
@@ -126,6 +161,7 @@ begin
           nodSub.SelectedIndex := 2;
         end;
       end;
+      nodCat.Expanded := true;
     end;
   end;
   nodRaiz.Expanded:=true;
@@ -143,11 +179,11 @@ begin
   if nodSel.Level = 0 then begin   //Almacén seleccionado.
     exit(true);   //Pasan todos
   end else if nodSel.Level = 1 then begin  //Categoría seleccionada
-    if grilla.Cells[2, f] = nodSel.Text then exit(true)
+    if grilla.Cells[colCat.idx, f] = nodSel.Text then exit(true)
     else exit(false);
-  end else if nodSel.Level = 2 then begin  //Categoría seleccionada
-    if (grilla.Cells[2, f] = nodSel.Parent.Text) and
-       (grilla.Cells[3, f] = nodSel.Text) then exit(true)
+  end else if nodSel.Level = 2 then begin  //Sub-Categoría seleccionada
+    if (grilla.Cells[colCat.idx, f] = nodSel.Parent.Text) and
+       (grilla.Cells[colSubcat.idx, f] = nodSel.Text) then exit(true)
     else exit(false);
   end;
 end;

@@ -59,12 +59,12 @@ type
     alineam : TAlignment; //Alineamiento del campo
     iEncab  : integer;    //índice a columna de la base de datos o texto
     tipo    : TugTipoCol; //Tipo de columna
-    idx     : integer;    //Índice dentro de su contenedor
+    idx     : integer;    //Índice dentro de su grilla contenedora (0->la columna de la izquierda)
   public  //campos adicionales
-    grilla   : TStringGrid;   //Referencia a la grilla de trabajo
+    grilla  : TStringGrid; //Referencia a la grilla de trabajo
     editable: boolean;    //Indica si se puede editar
     valDefec: string;     //Valor por defecto
-    formato : string;   //Formato para mostrar una celda, cuando es numérica
+    formato : string;     //Formato para mostrar una celda, cuando es numérica.
     restric : set of TugColRestric;
   private
     nullStr: string;   //Cadena nula. Se usa como variable auxiliar.
@@ -183,8 +183,8 @@ type
                             el evento de la grilla, ya que TGrillaDB, usa ese evento.}
 //    OnDblClick: TKeyPressEvent; {Se debe usar este evento en lugar de usar directamente
 //                          el evento de la grilla, ya que TGrillaDB, usa ese evento.}
-    OnMouseDown: TMouseEvent;
-    OnMouseUp  : TMouseEvent;
+    OnMouseDown    : TMouseEvent;
+    OnMouseUp      : TMouseEvent;
     OnMouseUpCell  : TEvMouseGrilla;
     OnMouseUpHeader: TEvMouseGrilla;
     OnMouseUpFixedCol: TEvMouseGrilla;
@@ -627,7 +627,11 @@ var
 begin
   case actType of
   ucaRead: begin  //Se pide leer un valor de la grilla
-    Result := StrToFloat(grilla.Cells[col, row]);  //es cadena
+    if grilla.Cells[col, row] = '' then begin
+      Result := 0;   //Para cadenas nulas, se asume cero
+    end else begin
+      Result := StrToFloat(grilla.Cells[col, row]);  //es cadena
+    end;
   end;
   ucaWrite: begin  //Se pide escribir un valor en la grilla
     grilla.Cells[col, row] := FloatToStr(AValue);  //Se escribe como cadena.
